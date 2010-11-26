@@ -112,8 +112,14 @@ python setup.py build install
 
 if [[ "$k" =~ Linux\ ubuntu ]]
 then
-    echo "/usr/local/lib" >> /etc/ld.so.conf
-    ldconfig
+    if `cat /etc/ld.so.conf | grep "/usr/local/lib" 1>/dev/null 2>&1`
+    then
+        echo "yara configured"
+    else
+        echo "/usr/local/lib" >> /etc/ld.so.conf
+        ldconfig
+        echo "yara configured"
+    fi
 fi
 
 cd $start
