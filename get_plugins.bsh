@@ -137,7 +137,7 @@ echo
 echo "downloading individual plugins"
 #install the lists.py library
 cd forensics/win32
-wget http://kurtz.cs.wesleyan.edu/%7Ebdolangavitt/memory/lists.py
+wget http://www.cc.gatech.edu/~brendan/volatility/dl/lists.py
 
 #download all other memory plugins
 cd $start
@@ -149,14 +149,14 @@ cd memory_plugins
 #wget http://mhl-malware-scripts.googlecode.com/files/malfind2.py
 #wget http://mhl-malware-scripts.googlecode.com/files/orphan_threads.py
 
-wget http://kurtz.cs.wesleyan.edu/%7Ebdolangavitt/memory/volshell.py
+wget http://www.cc.gatech.edu/~brendan/volatility/dl/volshell.py
 wget http://mhl-malware-scripts.googlecode.com/files/usermode_hooks2.py
 wget http://mhl-malware-scripts.googlecode.com/files/kernel_hooks.py
 wget http://jessekornblum.com/tools/volatility/cryptoscan.py
-wget http://kurtz.cs.wesleyan.edu/~bdolangavitt/memory/moddump.py
-wget http://kurtz.cs.wesleyan.edu/%7Ebdolangavitt/memory/getsids.py
-wget http://kurtz.cs.wesleyan.edu/%7Ebdolangavitt/memory/ssdt.py
-wget http://kurtz.cs.wesleyan.edu/%7Ebdolangavitt/memory/threadqueues.py
+wget http://www.cc.gatech.edu/~brendan/volatility/dl/moddump.py
+wget http://www.cc.gatech.edu/~brendan/volatility/dl/getsids.py
+wget http://www.cc.gatech.edu/~brendan/volatility/dl/ssdt.py
+wget http://www.cc.gatech.edu/~brendan/volatility/dl/threadqueues.py
 wget http://computer.forensikblog.de/files/volatility_plugins/keyboardbuffer.py
 wget http://jessekornblum.com/tools/volatility/suspicious.py
 wget http://www.pyflag.net/volatility/pstree.py
