@@ -1,0 +1,214 @@
+#!/bin/bash
+#
+# Author: Jamie Levy (gleeda)
+#
+# get_plugins.bsh
+#
+# Downloads and installs Volatility plugins
+#
+# Updated to include yara, vap and psscan3 as well as updated libraries
+#
+
+
+#check we have svn installed
+k=`uname -a`
+svn=`which svn`
+if [[ $svn =~ svn ]]
+then 
+    echo svn already installed
+else
+    if [[ "$k" =~ Linux\ ubuntu ]]
+    then
+        apt-get install subversion -y
+    elif [[ "$k" =~ Darwin ]]
+    then
+        port install subversion
+    else
+        echo please install subversion first!
+        exit 0
+    fi
+fi
+
+    
+#download Volatility from the SVN repository
+
+#echo "starting download from Volatility SVN repository"
+echo "downloading Volatility..."
+start=`pwd`/volatility/Volatility
+svn checkout http://volatility.googlecode.com/svn/trunk/ volatility
+cd $start
+cd ..
+
+#create a temporary directory 
+#and download the helper libraries
+
+echo
+echo "installing some dependencies"
+
+if [[ "$k" =~ Linux\ ubuntu ]]
+then
+    apt-get install pcregrep libpcre++-dev python-dev -y 
+elif [[ "$k" =~ Darwin ]]
+then
+    port install pcre pcre++
+fi
+
+mkdir temp
+cd temp
+
+echo
+echo "downloading and installing pefile"
+wget http://pefile.googlecode.com/files/pefile-1.2.10-89.tar.gz
+tar -xzvf pefile-1.2.10-89.tar.gz
+cd pefile-1.2.10-89
+python setup.py build
+python setup.py build install
+cd ..
+
+echo
+echo "downloading and installing pycrypto"
+wget http://gitweb.pycrypto.org/\?p=crypto/pycrypto-2.0.x.git\;a=snapshot\;h=9e9641d0a9b88f09683b5f26d3b99c4a2e148da5\;sf=tgz -O pycrypto.tgz
+
+tar -xzvf pycrypto.tgz
+cd pycrypto-2.0.x/
+python setup.py build
+python setup.py build install
+cd ..
+
+echo
+echo "downloading and installing pydasm"
+wget http://libdasm.googlecode.com/files/libdasm-1.5.tar.gz
+tar -xvzf libdasm-1.5.tar.gz
+cd libdasm-1.5
+make
+make install
+cd pydasm
+python setup.py build
+python setup.py build install
+cd ../..
+
+echo
+echo "downloading and installing yara"
+wget http://yara-project.googlecode.com/files/yara-1.4.tar.gz
+wget http://yara-project.googlecode.com/files/yara-python-1.4a.tar.gz
+tar -xvzf yara-1.4.tar.gz
+cd yara-1.4
+if [[ "$k" =~ Darwin ]]
+then
+    cat libyara/yara.h |sed 's/#include <pcre.h>/#include "\/opt\/local\/include\/pcre.h"/' > tmp
+    mv libyara/yara.h libyara/yara.h.bak
+    mv tmp libyara/yara.h
+    cat libyara/scan.c |sed 's/#include <pcre.h>/#include "\/opt\/local\/include\/pcre.h"/' > tmp
+    mv libyara/scan.c libyara/scan.c.bak
+    mv tmp libyara/scan.c
+fi
+./configure
+make
+make install
+cd ..
+tar -xvzf yara-python-1.4a.tar.gz
+cd yara-python-1.4a
+python setup.py build
+python setup.py build install
+
+if [[ "$k" =~ Linux\ ubuntu ]]
+then
+    echo "/usr/local/lib" >> /etc/ld.so.conf
+    ldconfig
+fi
+
+cd $start
+cd ..
+rm -Rf temp
+
+cd $start
+
+#get the Moyix's registry files installed:
+echo
+echo "downloading and installing volreg and volrip"
+wget http://www.cc.gatech.edu/%7Ebrendan/volatility/dl/volreg-0.6.tar.gz
+tar -xzvf volreg-0.6.tar.gz
+wget http://www.cc.gatech.edu/%7Ebrendan/volatility/dl/volrip-0.1.tar.gz
+tar -xzvf volrip-0.1.tar.gz
+
+rm -f volrip-0.1.tar.gz volreg-0.6.tar.gz
+
+echo
+echo "downloading individual plugins"
+#install the lists.py library
+cd forensics/win32
+wget http://kurtz.cs.wesleyan.edu/%7Ebdolangavitt/memory/lists.py
+
+#download all other memory plugins
+cd $start
+cd memory_plugins
+
+#the following have been replaced with vap below...
+#wget http://mhl-malware-scripts.googlecode.com/files/idt.py
+#wget http://mhl-malware-scripts.googlecode.com/files/driverirp.py
+#wget http://mhl-malware-scripts.googlecode.com/files/malfind2.py
+#wget http://mhl-malware-scripts.googlecode.com/files/orphan_threads.py
+
+wget http://kurtz.cs.wesleyan.edu/%7Ebdolangavitt/memory/volshell.py
+wget http://mhl-malware-scripts.googlecode.com/files/usermode_hooks2.py
+wget http://mhl-malware-scripts.googlecode.com/files/kernel_hooks.py
+wget http://jessekornblum.com/tools/volatility/cryptoscan.py
+wget http://kurtz.cs.wesleyan.edu/~bdolangavitt/memory/moddump.py
+wget http://kurtz.cs.wesleyan.edu/%7Ebdolangavitt/memory/getsids.py
+wget http://kurtz.cs.wesleyan.edu/%7Ebdolangavitt/memory/ssdt.py
+wget http://kurtz.cs.wesleyan.edu/%7Ebdolangavitt/memory/threadqueues.py
+wget http://computer.forensikblog.de/files/volatility_plugins/keyboardbuffer.py
+wget http://jessekornblum.com/tools/volatility/suspicious.py
+wget http://www.pyflag.net/volatility/pstree.py
+wget http://www.cc.gatech.edu/~brendan/volatility/dl/psscan3.py
+
+#download and install Andreas' plugins
+mkdir temp
+cd temp
+
+wget http://mhl-malware-scripts.googlecode.com/files/vap-0.1.zip
+unzip vap-0.1.zip
+mv vap/*.py  $start/memory_plugins
+
+wget http://computer.forensikblog.de/files/volatility_plugins/volatility_fileobjscan-0.1.zip
+
+unzip volatility_fileobjscan-0.1.zip
+rm -Rf forensics
+
+wget http://computer.forensikblog.de/files/volatility_plugins/volatility_symlinkobjscan-current.zip
+
+unzip volatility_symlinkobjscan-current.zip
+rm -Rf forensics
+
+wget http://computer.forensikblog.de/files/volatility_plugins/volatility_mutantscan-current.zip
+
+unzip volatility_mutantscan-current.zip
+rm -Rf forensics
+
+wget http://computer.forensikblog.de/files/volatility_plugins/volatility_driverscan-current.zip
+
+unzip volatility_driverscan-current.zip
+
+
+cp memory_plugins/* $start/memory_plugins
+
+#remove temporary directory
+cd ..
+rm -Rf temp
+
+#remove file with conflicting_EPROCESS class
+cd $start
+mv memory_plugins/example3.py memory_plugins/example3.py-bak
+
+echo
+echo
+echo "Done.  Change to your Volatility directory and type 'python volatility'"
+echo "All plugins should populate under 'supported plugins'"
+echo
+echo "you still need to install Inline::Python in order to use the registry"
+echo "plugins. You can find it at: "
+echo "http://search.cpan.org/CPAN/authors/id/N/NI/NINE/Inline-Python-0.29.tar.gz"
+echo " or CPAN: "
+echo "    perl -MCPAN -e shell"
+echo "      install Inline::Python"
+
