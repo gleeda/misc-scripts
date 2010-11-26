@@ -32,8 +32,7 @@ fi
     
 #download Volatility from the SVN repository
 
-#echo "starting download from Volatility SVN repository"
-echo "downloading Volatility..."
+echo "starting download from Volatility SVN repository..."
 start=`pwd`/volatility/Volatility
 svn checkout http://volatility.googlecode.com/svn/trunk/ volatility
 cd $start
