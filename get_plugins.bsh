@@ -89,7 +89,7 @@ cd ../..
 echo
 echo "downloading and installing yara"
 wget http://yara-project.googlecode.com/files/yara-1.4.tar.gz
-wget http://yara-project.googlecode.com/files/yara-python-1.4a.tar.gz
+wget http://yara-project.googlecode.com/files/yara-python-1.4.tar.gz
 tar -xvzf yara-1.4.tar.gz
 cd yara-1.4
 if [[ "$k" =~ Darwin ]]
@@ -105,8 +105,8 @@ fi
 make
 make install
 cd ..
-tar -xvzf yara-python-1.4a.tar.gz
-cd yara-python-1.4a
+tar -xvzf yara-python-1.4.tar.gz
+cd yara-python-1.4
 python setup.py build
 python setup.py build install
 
