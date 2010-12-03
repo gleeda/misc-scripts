@@ -89,7 +89,7 @@ cd ../..
 echo
 echo "downloading and installing yara"
 wget http://yara-project.googlecode.com/files/yara-1.4.tar.gz
-wget http://yara-project.googlecode.com/files/yara-python-1.4.tar.gz
+wget http://yara-project.googlecode.com/files/yara-python-1.4a.tar.gz
 tar -xvzf yara-1.4.tar.gz
 cd yara-1.4
 if [[ "$k" =~ Darwin ]]
@@ -105,8 +105,8 @@ fi
 make
 make install
 cd ..
-tar -xvzf yara-python-1.4.tar.gz
-cd yara-python-1.4
+tar -xvzf yara-python-1.4a.tar.gz
+cd yara-python-1.4a
 python setup.py build
 python setup.py build install
 
@@ -171,8 +171,8 @@ wget http://www.cc.gatech.edu/~brendan/volatility/dl/psscan3.py
 mkdir temp
 cd temp
 
-wget http://mhl-malware-scripts.googlecode.com/files/vap-0.1.zip
-unzip vap-0.1.zip
+wget http://mhl-malware-scripts.googlecode.com/files/vap-final.zip
+unzip vap-final.zip
 mv vap/*.py  $start/memory_plugins
 
 wget http://computer.forensikblog.de/files/volatility_plugins/volatility_fileobjscan-0.1.zip
