@@ -20,7 +20,7 @@ class MainClass {
     String output =     "C:\\temp\\output";
     String script =     "C:\\temp\\virustotal.pl";
     String cmdline =    "/c cd \"" + ActivePerl + "\" && perl ";
-    cmdline += "\"" + script + "\"-t -d \"" + output + "\" -f " + "\"" + hashfile + "\"";
+    cmdline += "\"" + script + "\" -t -d \"" + output + "\" -f " + "\"" + hashfile + "\"";
 
     SearchClass search();
     SystemClass::ClearConsole(SystemClass::SHOWCONSOLE);
