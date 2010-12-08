@@ -48,8 +48,10 @@ print INDEX "<table border=1 align=\"center\" width=90%>\n";
 print INDEX "<TBODY >\n<tr>";
 print INDEX "<th vAlign=top align=center width=\"50%\">\n";
 print INDEX "<b>File Name(s)</b></th>\n";
-print INDEX "<th vAlign=top align=center width=\"50%\">\n";
-print INDEX "<b>Hash Value</b></th></tr>\n";
+print INDEX "<th vAlign=top align=center width=\"30%\">\n";
+print INDEX "<b>Hash Value</b></th>\n";
+print INDEX "<th vAlign=top align=center width=\"20%\">\n";
+print INDEX "<b>Percentage</b></th></tr>\n";
 
 
 foreach $key (%HASHES) {
@@ -61,7 +63,7 @@ foreach $key (%HASHES) {
       print INDEX "$h<br><br>\n";
     }
     print INDEX "</td>";
-    print INDEX "<td vAlign=top align=left width=\"50%\">\n";
+    print INDEX "<td vAlign=top align=left width=\"30%\">\n";
     &posthash($key);
     sleep (5);
   }
@@ -134,18 +136,26 @@ sub posthash {
 
     print "getting from $url\n";
     if ($url !~ /(report|id)/) {
-      print INDEX "$HASH (not found)</td></tr>\n";
+      print INDEX "$HASH (not found)</td><td align=center><font color=\"blue\">N/A</font></td></tr>\n";
       close(OUT);
       unlink "$HASH.html";
     }
     else {
-      print INDEX "<a href=\"$HASH.html\">$HASH</a></td></tr>\n";
+      print INDEX "<a href=\"$HASH.html\">$HASH</a></td>\n";
+      print INDEX "<td vAlign=top align=center width=\"20%\">\n";
       $req = HTTP::Request->new(GET => $url);
       $req->content_type('application/x-www-form-urlencoded');
       $res = $ua->request($req);
 
       if ($res->is_success) {
         print OUT $res->content;
+        $content = $res->content;
+        if ($content =~ m/<span id=\"porcentaje\"\s+style=\"color\:\s+red\">(.*?)<\/span>/ism) {
+            print INDEX "<b><font color=\"red\">" . $1."<\/font><\/b>\/";
+        }
+        if ($content =~ m/<span id=\"status-total\">\/(.*?)<\/span>/ism) {
+            print INDEX $1."</td></tr>\n";
+        }
       }
       else {
         print $res->status_line, "\n";
