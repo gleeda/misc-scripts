@@ -49,7 +49,7 @@ class MainClass {
           notWorks++;
         Console.WriteLine("Entry " + e.FullPath());
         Console.WriteLine("Hash Value: " + hash);
-        file.WriteLine(e.FullPath() + "\t" + hash);
+        file.WriteLine(hash + "\t" + e.FullPath());
         SystemClass::StatusInc();
       }
       else
