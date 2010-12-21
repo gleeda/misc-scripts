@@ -17,7 +17,7 @@ if [[ $svn =~ svn ]]
 then 
     echo svn already installed
 else
-    if [[ "$k" =~ Linux\ ubuntu ]]
+    if [[ "$k" =~ buntu ]]
     then
         apt-get install subversion -y
     elif [[ "$k" =~ Darwin ]]
@@ -44,7 +44,7 @@ cd ..
 echo
 echo "installing some dependencies"
 
-if [[ "$k" =~ Linux\ ubuntu ]]
+if [[ "$k" =~ buntu ]]
 then
     apt-get install pcregrep libpcre++-dev python-dev -y 
 elif [[ "$k" =~ Darwin ]]
@@ -110,7 +110,7 @@ cd yara-python-1.4a
 python setup.py build
 python setup.py build install
 
-if [[ "$k" =~ Linux\ ubuntu ]]
+if [[ "$k" =~ buntu ]]
 then
     if `cat /etc/ld.so.conf | grep "/usr/local/lib" 1>/dev/null 2>&1`
     then
