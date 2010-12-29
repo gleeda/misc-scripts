@@ -17,7 +17,7 @@ class MainClass {
     int                 notWorks,
                         TotalFiles;
     String ActivePerl = "C:\\Perl\\bin";
-    String script =     "C:\\Program Files\\EnCase6.18\\EnScript\\VT\\virustotal.pl";
+    String script =     "C:\\Program Files\\EnCase6\\EnScript\\VT\\virustotal.pl";
     String cmdline =    "/c cd \"" + ActivePerl + "\" && perl ";
 
 
