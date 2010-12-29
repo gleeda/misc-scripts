@@ -1,29 +1,45 @@
 /*
  * Author: Jamie Levy (Gleeda)
- * 
+ *
  * hasher.EnScript
  *
  * Driver for virustotal.pl
  *
- * hashes all files for case and calls virustotal.pl to 
+ * hashes selected files for case and calls virustotal.pl to
  *  create an HTML report of these files
  *
  */
 
 class MainClass {
+  String hashfile, output;
 
   void Main(CaseClass c) {
     int                 notWorks,
                         TotalFiles;
-    String hashfile =   "C:\\temp\\hashes.txt";
     String ActivePerl = "C:\\Perl\\bin";
-    String output =     "C:\\temp\\output";
-    String script =     "C:\\temp\\virustotal.pl";
+    String script =     "C:\\Program Files\\EnCase6.18\\EnScript\\VT\\virustotal.pl";
     String cmdline =    "/c cd \"" + ActivePerl + "\" && perl ";
+
+
+    if (!SystemClass::PathDialog(hashfile,
+                                  "Choose Hash output file",
+                                  "txt",
+                                  "Text Files\t*.txt",
+                                  SystemClass::CREATE)){
+       Console.WriteLine("Create Failed for: " + hashfile);
+       return;
+    }
+
+     if (!SystemClass::FolderDialog(output, "VirusTotal Report :: Choose an Output Folder")){
+       Console.WriteLine("Create Failed for: " + output);
+       return;
+    }
+
+    SystemClass::ClearConsole(SystemClass::SHOWCONSOLE);
+    Console.WriteLine("HASHFILE: " + hashfile);
     cmdline += "\"" + script + "\" -t -d \"" + output + "\" -f " + "\"" + hashfile + "\"";
 
     SearchClass search();
-    SystemClass::ClearConsole(SystemClass::SHOWCONSOLE);
     LocalFileClass   file();
     file.Open(hashfile, FileClass::WRITETEXTCRLF);
     file.SetCodePage(CodePageClass::UTF8);
@@ -33,8 +49,7 @@ class MainClass {
     exec.SetFolder("C:\\WINDOWS\\system32\\");
 
     forall (EntryClass e in c.EntryRoot()) {
-      if (!e.IsFolder() && !e.IsDeleted() && !e.FullPath().Contains("Volume Slack") &&
-        !e.FullPath().Contains("Unallocated Clusters") && !e.FullPath().Contains("Unused Disk Area")) {
+      if (e.IsSelected()) {
         ++TotalFiles;
       }
     }
@@ -42,18 +57,18 @@ class MainClass {
     SystemClass::StatusRange("Hashing files", TotalFiles);
 
     forall (EntryClass e in c.EntryRoot()) {
-      if (!e.IsFolder() && !e.IsDeleted() && !e.FullPath().Contains("Volume Slack") &&
-          !e.FullPath().Contains("Unallocated Clusters") && !e.FullPath().Contains("Unused Disk Area")) {
+      if (e.IsSelected()){
         HashClass hash = search.ComputeHash(e);
-        if (!hash.IsValid())
+        if (!hash.IsValid()) {
           notWorks++;
-        Console.WriteLine("Entry " + e.FullPath());
-        Console.WriteLine("Hash Value: " + hash);
-        file.WriteLine(hash + "\t" + e.FullPath());
-        SystemClass::StatusInc();
+          Console.WriteLine("Rejected file: " + e.FullPath());
+        }else{
+          Console.WriteLine("Entry " + e.FullPath());
+          Console.WriteLine("Hash Value: " + hash);
+          file.WriteLine(e.FullPath() + "\t" + hash);
+          SystemClass::StatusInc();
+        }
       }
-      else
-        Console.WriteLine("Rejected file: " + e.FullPath());
     }
 
     Console.WriteLine("Finished Hashing");
@@ -66,7 +81,8 @@ class MainClass {
       Console.WriteLine(exec.Application());
 
       exec.SetCommandLine(cmdline);
-      exec.SetShow(true);
+      exec.SetShow(true);  //left this visible so we'll know when it finishes
+      //exec.SetShow(false);  //set this to false if you don't want to see the commandline
       if (exec.Start(LocalMachine, 1000)) {
         Console.WriteLine(exec.Output());
         Console.WriteLine("Worked");

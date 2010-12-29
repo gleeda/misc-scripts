@@ -98,15 +98,21 @@ sub gethashes {
     my @temp;
     if (defined $TAB) {
         @temp = split /\t/;
+        if (defined $HASHES{$temp[1]}) {
+          $HASHES{$temp[1]} .= "::$temp[0]";
+        }else{
+          $HASHES{$temp[1]} = $temp[0];
+        }
     }else{
         @temp = split /  /;
+        if (defined $HASHES{$temp[0]}) {
+          $HASHES{$temp[0]} .= "::$temp[1]";
+        }else{
+          $HASHES{$temp[0]} = $temp[1];
+        }
     }
     
-    if (defined $HASHES{$temp[0]}) {
-      $HASHES{$temp[0]} .= "::$temp[1]";
-    }else{
-      $HASHES{$temp[0]} = $temp[1];
-    }
+    
   }
   close (INPUT);
 }
@@ -151,7 +157,11 @@ sub posthash {
         print OUT $res->content;
         $content = $res->content;
         if ($content =~ m/<span id=\"porcentaje\"\s+style=\"color\:\s+red\">(.*?)<\/span>/ism) {
-            print INDEX "<b><font color=\"red\">" . $1."<\/font><\/b>\/";
+            if ($1 > 0){
+               print INDEX "<b><font color=\"red\">" . $1."<\/font><\/b>\/";
+            }else{
+               print INDEX "<b>" . $1."<\/b>\/";
+            }
         }
         if ($content =~ m/<span id=\"status-total\">\/(.*?)<\/span>/ism) {
             print INDEX $1."</td></tr>\n";
