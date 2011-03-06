@@ -1,0 +1,124 @@
+#!/bin/bash
+#
+# Author: Jamie Levy (gleeda)
+#
+# get_plugins_1.4.bsh
+#
+# Downloads and installs Volatility 1.4 dependencies and plugins
+#
+# Updated for Volatility 1.4
+#
+
+
+#check we have svn installed
+k=`uname -a`
+svn=`which svn`
+if [[ $svn =~ svn ]]
+then 
+    echo svn already installed
+else
+    if [[ "$k" =~ buntu ]]
+    then
+        apt-get install subversion -y
+    elif [[ "$k" =~ Darwin ]]
+    then
+        port install subversion
+    else
+        echo please install subversion first!
+        exit 0
+    fi
+fi
+
+    
+#download Volatility from the SVN repository
+
+echo "starting download from Volatility SVN repository..."
+start=`pwd`/Volatility-1.4_rc1 
+svn checkout http://volatility.googlecode.com/svn/branches/Volatility-1.4_rc1  
+
+#create a temporary directory 
+#and download the helper libraries
+
+echo
+echo "installing some dependencies"
+
+if [[ "$k" =~ buntu ]]
+then
+    apt-get install pcregrep libpcre++-dev python-dev -y 
+elif [[ "$k" =~ Darwin ]]
+then
+    port install pcre pcre++
+fi
+
+pid=$$
+mkdir temp_$pid
+cd temp_$pid
+
+echo
+echo "downloading and installing pycrypto"
+wget http://gitweb.pycrypto.org/\?p=crypto/pycrypto-2.0.x.git\;a=snapshot\;h=9e9641d0a9b88f09683b5f26d3b99c4a2e148da5\;sf=tgz -O pycrypto.tgz
+
+tar -xzvf pycrypto.tgz
+cd pycrypto-2.0.x/
+python setup.py build
+python setup.py build install
+cd ..
+
+echo
+echo "downloading and installing distorm3"
+wget http://distorm.googlecode.com/files/distorm3.zip
+unzip distorm3.zip
+cd distorm3
+python setup.py build
+python setup.py build install
+cd ..
+
+echo
+echo "downloading and installing yara"
+wget http://yara-project.googlecode.com/files/yara-1.4.tar.gz
+wget http://yara-project.googlecode.com/files/yara-python-1.4a.tar.gz
+tar -xvzf yara-1.4.tar.gz
+cd yara-1.4
+if [[ "$k" =~ Darwin ]]
+then
+    cat libyara/yara.h |sed 's/#include <pcre.h>/#include "\/opt\/local\/include\/pcre.h"/' > tmp
+    mv libyara/yara.h libyara/yara.h.bak
+    mv tmp libyara/yara.h
+    cat libyara/scan.c |sed 's/#include <pcre.h>/#include "\/opt\/local\/include\/pcre.h"/' > tmp
+    mv libyara/scan.c libyara/scan.c.bak
+    mv tmp libyara/scan.c
+fi
+./configure
+make
+make install
+cd ..
+tar -xvzf yara-python-1.4a.tar.gz
+cd yara-python-1.4a
+python setup.py build
+python setup.py build install
+
+if [[ "$k" =~ buntu ]]
+then
+    if `cat /etc/ld.so.conf | grep "/usr/local/lib" 1>/dev/null 2>&1`
+    then
+        echo "yara configured"
+    else
+        echo "/usr/local/lib" >> /etc/ld.so.conf
+        ldconfig
+        echo "yara configured"
+    fi
+fi
+
+cd ../..
+rm -Rf temp_$pid
+
+cd $start
+cd volatility/plugins
+
+wget http://malwarecookbook.googlecode.com/svn/trunk/malware.py
+
+echo
+echo
+echo "Done.  Change to your Volatility directory and type 'python vol.py -h'"
+echo "All plugins should populate under 'supported plugins'"
+echo
