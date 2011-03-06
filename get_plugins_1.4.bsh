@@ -121,4 +121,10 @@ echo
 echo
 echo "Done.  Change to your Volatility directory and type 'python vol.py -h'"
 echo "All plugins should populate under 'supported plugins'"
+
+if [["$k" =~ "Darwin" ]]
+then
+    echo "You may have to manually install distorm3"
+fi
 echo
+
