@@ -8,6 +8,9 @@
 #
 # Updated for Volatility 1.4
 #
+# Tested on Ubuntu and Mac OSX
+#   At the moment there is an issue with the distorm3 dependency on Mac OSX
+#
 
 
 #check we have svn installed
