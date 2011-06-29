@@ -2,11 +2,11 @@
 #
 # Author: Jamie Levy (gleeda)
 #
-# get_plugins_1.4.bsh
+# get_plugins_2.0.bsh
 #
-# Downloads and installs Volatility 1.4 dependencies and plugins
+# Downloads and installs Volatility 2.0 dependencies and plugins
 #
-# Updated for Volatility 1.4
+# Updated for Volatility 2.0
 #
 # Tested on Ubuntu and Mac OSX
 #   At the moment there is an issue with the distorm3 dependency on Mac OSX
