@@ -36,8 +36,8 @@ fi
 #download Volatility from the SVN repository
 
 echo "starting download from Volatility SVN repository..."
-start=`pwd`/Volatility-1.4_rc1 
-svn checkout http://volatility.googlecode.com/svn/branches/Volatility-1.4_rc1  
+start=`pwd`/Volatility
+svn checkout http://volatility.googlecode.com/svn/trunk Volatility  
 
 #create a temporary directory 
 #and download the helper libraries
