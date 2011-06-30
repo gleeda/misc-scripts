@@ -1,0 +1,199 @@
+/*
+  This script will parse the contents of an identified Yahoo Messenger chat log
+
+    1. Select all Yahoo Messenger chat log files
+    2. Type in the dialog box the screenname of the LOCAL user of the Messenger client (this screenname is case sensitive)
+    3. Output will be to the Log Records under bookmarks
+    4. Change line 25 to LogClass::DEBUG if you want all output displayed to the console
+
+  Created by Paul Bobby, 2008 - paul.bobby@lmco.com
+*/
+
+/*
+ * Added GUI to output chats directly to text files
+ *
+ * -gleeda
+ */
+
+include "GSI_LogLib"
+
+class MainClass {
+
+  LogClass CLog;  // Make CLog global so that it can be used throughout the script
+  String variable;
+
+   /*
+   * Functions for handling RTL languages correctly
+   *  (added by Gleeda)
+   */
+  bool WriteBuffer(MemoryFileClass &file, char msg) {
+    file.SetCodePage(CodePageClass::ANSI);
+    int temp = msg;
+    file.WriteBinaryInt(temp, 1);
+    return file.IsValid();
+  }
+
+  void ReadBuffer(MemoryFileClass &file, String &msg) {
+    file.SetCodePage(CodePageClass::UTF8);
+    file.Seek(0);
+    file.ReadString(msg);
+  }
+
+
+  void Main(CaseClass c) {
+    // Start of Case startup code
+    // 1. Check if a case is open with evidence added
+    // 2. Clear the console and focus it
+    // 3. Script start time
+       SystemClass::ClearConsole(1);
+       MemoryFileClass buffer();
+       String output;
+
+
+       CLog = new LogClass("Yahoo Messenger Parser", LogClass::INFO, Console);
+       if(!c){
+         CLog.Fatal("You must have an open case");
+       }
+       if (!c.EntryRoot().FirstChild()) {
+         CLog.Fatal("Please add some evidence to your case");
+       }
+
+       DateClass now;
+       now.Now();
+       uint start = now.GetUnix();
+       CLog.Info("Script Started");
+    // End of Case startup code
+
+    //
+    // Script specific variables
+
+    String screenName = variable;
+    if (!SystemClass::FolderDialog(output, "Chat output folder :: Choose an Output Folder")){
+      Console.WriteLine("Create Failed for: " + output);
+      return;
+    }
+
+    long date;
+    String xorText;
+    char value, value2;
+    int counter;
+    bool direction;
+    int screenNameSize = screenName.GetLength();
+    EntryFileClass ef();
+    BookmarkFolderClass parentFolder(c.BookmarkRoot(),"Yahoo Messenger Logs");
+    //
+    // Script specific code start
+
+    forall (EntryClass e in c.EntryRoot()) {
+      if (e.IsSelected() && !e.IsFolder()) {
+        Console.WriteLine("");
+        Console.WriteLine("++++++ Buddy: " + e.Parent().Name());
+        ExecuteClass exec();
+        exec.SetApplication("cmd.exe");
+        exec.SetFolder("C:\\WINDOWS\\system32\\");
+        String cmdline =    " /c mkdir " + output  + "\\" + screenName + "--" + e.Parent().Name();
+        exec.SetCommandLine(cmdline);
+        exec.SetShow(true);
+
+        if (exec.Start(LocalMachine, 1000)) {
+          //Console.WriteLine(exec.Output());
+        }
+        else
+          Console.WriteLine("Could Not Start Application");
+
+        if (ef.Open(e,FileClass::NOUNERASE)) {
+          CLog.Info("Parsing: " + e.FullPath());
+          LogRecordClass recs();
+          LogRecordClass rec();
+          long fileSize = ef.GetSize();
+          DateClass messageTime();
+          ef.SetCodePage(CodePageClass::ANSI);
+          String folderName = parseParentFolder(e.FullPath());
+
+          while (ef.GetPos() < fileSize) {
+            date = ef.ReadBinaryInt(4);
+            messageTime.SetUnix(date);    // Timestamp NOT adjusted for timezone
+            ef.Skip(4);                   // Jump ahead 4 bytes (User type - unknown value)
+            direction = ef.ReadBinaryInt(4);
+            long messageSize = ef.ReadBinaryInt(4);
+            buffer.Open(1024, FileClass::WRITE);
+            if (messageSize > 0) {
+              counter = 0;
+              xorText = "";
+              for (int x = 0; x < messageSize; x++) {
+                value = ef.ReadBinaryInt(1);
+                if (counter == screenNameSize) {
+                  counter = 0;
+                }
+                value2 = (screenName.SubString(counter,1)).LastChar();
+                value = value ^ value2;
+                WriteBuffer(buffer, value);       //This allows us to handle RTL languages
+                counter++;
+              }
+               ReadBuffer(buffer, xorText);       //This allows us to handle RTL languages
+               buffer.Close();
+
+              CLog.Debug(direction?"Recv:"+messageTime.GetString() +":"+xorText:"Sent:"+messageTime.GetString() +":"+xorText);
+              rec = new LogRecordClass(recs, e.Name());
+              rec.SetCreated(messageTime);
+              rec.SetComment(direction?"Recv:"+xorText:"Sent:"+xorText);
+              Console.WriteLine(direction?"Recv: "+messageTime.GetString() +"  " +xorText:"Sent: "+messageTime.GetString() +"  " + xorText);
+              LocalFileClass file2();
+              file2.Open(output + "\\" + screenName + "--" + e.Parent().Name() + "\\" + e.Name(), FileClass::APPEND);
+              file2.SetCodePage(CodePageClass::UTF8);
+              file2.WriteLine(direction?"Recv: "+messageTime.GetString() +"  " +xorText+"\r\n":"Sent: "+messageTime.GetString() +"  " + xorText+"\r\n");
+              file2.Close();
+            }
+            ef.Skip(4);                  // Move forward beyond the footer to the next record
+          }
+          ef.Close();
+          parentFolder.AddDatamark(folderName, recs);
+        }
+        else {
+          CLog.Fatal("Cannot open the file: " + e.FullPath());
+        }
+
+      }
+    }
+    // Script specific code ends
+    //
+
+    // Case closedown code
+       now.Now();
+       CLog.Info("Script Completed in " + (now.GetUnix() - start) + " seconds");
+  }
+
+
+  String parseParentFolder(String path) {
+    path = path.GetFilePath();
+    path = path.GetFilename();
+    return path;
+  }
+
+  class FilterDialogClass: DialogClass {
+    StringEditClass variable;
+
+    FilterDialogClass(DialogClass parent, MainClass v):
+      DialogClass(parent, "Edit Conditions"),
+      variable(this, "Enter the case sensitive screen name of the LOCAL user of Yahoo Chat Messenger", START, NEXT, 200, DEFAULT, 0, v.variable, 512, 0)
+    {
+    }
+  }
+  MainClass() {
+    String usageText = "This script will parse Yahoo Messenger Chat Logs and place the output under Bookmarks->Log Records\n"
+    "This script will work against selected files only.\n\n"
+    "WARNING: There is no verifiable format to a Yahoo Messenger Chat log - therefore the script may hang if you attempt to parse Deleted chat logs.\n"
+    "This script will parse deleted logs, but your mileage may vary. If the script does not stop, then cancel the execution of the script\n"
+    "and select only a few logs at a time.\n\n"
+    "Are you ready to proceed, or do you need to cancel to set up the script properly?\n";
+    int mbResponse = SystemClass::Message(SystemClass::MBOKCANCEL, "Template Script",usageText);
+    if (mbResponse == SystemClass::CANCEL) {
+      return;
+    }
+
+    FilterDialogClass dialog(null, this);
+    if (dialog.Execute() != SystemClass::OK)
+      SystemClass::Exit();
+  }
+}
+
