@@ -116,8 +116,10 @@ cd ../..
 rm -Rf temp_$pid
 
 cd $start
-cd volatility/plugins
+wget http://jls-scripts.googlecode.com/files/timeliner_9-2011.zip
+unzip timeliner_9-2011.zip
 
+cd volatility/plugins
 wget http://malwarecookbook.googlecode.com/svn/trunk/malware.py
 
 echo
