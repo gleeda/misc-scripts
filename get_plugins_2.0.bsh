@@ -121,6 +121,9 @@ unzip timeliner_9-2011.zip
 
 cd volatility/plugins
 wget http://malwarecookbook.googlecode.com/svn/trunk/malware.py
+wget http://malwarecookbook.googlecode.com/svn/trunk/zeusscan/zeusscan1.py
+wget http://malwarecookbook.googlecode.com/svn/trunk/zeusscan/zeusscan2.py
+wget http://malwarecookbook.googlecode.com/svn/trunk/zeroaccess/zeroaccess.py
 
 echo
 echo
