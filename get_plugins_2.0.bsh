@@ -62,16 +62,16 @@ echo "downloading and installing pycrypto"
 wget http://gitweb.pycrypto.org/\?p=crypto/pycrypto-2.0.x.git\;a=snapshot\;h=9e9641d0a9b88f09683b5f26d3b99c4a2e148da5\;sf=tgz -O pycrypto.tgz
 
 tar -xzvf pycrypto.tgz
-cd pycrypto-2.0.x/
+cd `tar -tf pycrypto.tgz | head -n1`
 python setup.py build
 python setup.py build install
 cd ..
 
 echo
 echo "downloading and installing distorm3"
-wget http://distorm.googlecode.com/files/distorm3.zip
-unzip distorm3.zip
-cd distorm3
+wget http://distorm.googlecode.com/files/distorm3-1.0.zip
+unzip distorm3-1.0.zip
+cd distorm3-1.0
 python setup.py build
 python setup.py build install
 cd ..
