@@ -1,0 +1,361 @@
+/*
+ * Author: Jamie Levy
+ *
+ * Differential.EnScript
+ *  outputs files that are different from one disk image when compared to the original
+ *
+ */
+class MainClass;
+
+class FileContainer: NameListClass {
+  String myHash;
+  int mySize;
+
+  FileContainer(NameListClass parent, const String &name, const String &hash, int size):
+    NameListClass(parent, name),
+    myHash = hash,
+    mySize = size
+  {
+  }
+
+  void PrintWiki(LocalFileClass fileout, bool incl_hash, FileContainer other) {
+    if (incl_hash && other == null) {
+      Console.WriteLine("| New File | " + this.Name() + " | N/A | N/A | " + String(mySize) + " | " + String(myHash) + "|");
+      fileout.WriteLine("| New File | " + this.Name() + " | N/A | N/A | " + String(mySize) + " | " + String(myHash) + "|");
+    } else if (other == null) {
+      Console.WriteLine("| New File | " + this.Name() + " | N/A | N/A | " + String(mySize) + " | N/A | ");
+      fileout.WriteLine("| New File | " + this.Name() + " | N/A | N/A | " + String(mySize) + " | N/A | ");
+    } else if (other != null && incl_hash) {
+      fileout.WriteLine("| Size diff | " + this.Name() +  " | " + String(other.mySize) + " | " + String(other.myHash) + " | " + String(mySize) + " | " + String(myHash)+ " | ") ;
+      Console.WriteLine("| Size diff | " + this.Name() +  " | " + String(other.mySize) + " | " + String(other.myHash) + " | " + String(mySize) + " | " + String(myHash) + " | ") ;
+    } else if (other) {
+      fileout.WriteLine("| Size diff | " + this.Name() +  " | " + String(other.mySize) + " | N/A | " + String(mySize) + " | N/A | ") ;
+      Console.WriteLine("| Size diff | " + this.Name() +  " | " + String(other.mySize) + " | N/A | " + String(mySize) + " | N/A | ") ;
+    }
+  }
+
+  void PrintCSV(LocalFileClass fileout, bool incl_hash, FileContainer other, const String &char = "") {
+    if (incl_hash && other == null) {
+      Console.WriteLine(" New File  "  + char + this.Name() + char + "  N/A  " + char + " N/A  " + char + String(mySize) + char + String(myHash));
+      fileout.WriteLine(" New File  " + char + this.Name() + char + "  N/A " + char + " N/A  " + char + String(mySize) + char + String(myHash));
+    } else if (other == null) {
+      Console.WriteLine(" New File  " + char + this.Name() + char + " N/A " + char + " N/A  " + char + String(mySize) + char + "  N/A  ");
+      fileout.WriteLine(" New File  " + char + this.Name() + char + " N/A " + char + " N/A  " + char + String(mySize) + char + "  N/A  ");
+    } else if (other != null && incl_hash) {
+      fileout.WriteLine(" Size diff  " + char + this.Name() + char + String(other.mySize) + char  + String(other.myHash) + char + String(mySize) + char + String(myHash)) ;
+      Console.WriteLine(" Size diff  " + char + this.Name() + char + String(other.mySize) + char  + String(other.myHash) + char + String(mySize) + char + String(myHash)) ;
+    } else if (other) {
+      fileout.WriteLine(" Size diff  " + char + this.Name() + char + String(other.mySize) + char + "  N/A  " + char + String(mySize) + char + "  N/A  ") ;
+      Console.WriteLine(" Size diff  " + char + this.Name() + char + String(other.mySize) + char + "  N/A  " + char + String(mySize) + char + "  N/A  ") ;
+    }
+  }
+
+  void PrintPythonList(LocalFileClass fileout, bool incl_hash, FileContainer other, NameListClass devices, CaseClass c) {
+    String name = this.Name();
+    foreach (NameListClass d in devices) {
+      name.Replace(c.Name() + "\\" + d.Name() + "\\", "");
+    }
+    name.Replace("\\", "\\\\");
+    if (other == null) {
+      Console.WriteLine("NEW FILE:    \"" + name + "\",");
+      fileout.WriteLine("    \"" + name + "\",");
+    } else if (!incl_hash && other != null) {
+      Console.WriteLine("SIZE DIFF: " + String(other.mySize) + " | " + String(mySize) + "   \"" + name + "\",");
+      fileout.WriteLine("    \"" + name + "\",");
+    } else if (incl_hash && other != null) {
+      Console.WriteLine("SIZE/HASH DIFF:  \"" + name + "\"" + String(other.mySize) + " | " +String(other.myHash) + " | " + String(mySize) + " | " + String(myHash)) ;
+      fileout.WriteLine("    \"" + name + "\",");
+    }
+  }
+
+  bool BadChar(String str) {
+    //Check for bad characters
+    forall (char ch in str) {
+      if (!((ch >= 48 && ch <= 57) || (ch >= 65 && ch <= 90) || (ch >= 97 && ch <= 122) || ch == 45 || ch == 95))
+        return true;
+    }
+    return false;
+  }
+}
+
+class MainClass {
+  String    before,
+            after,
+            char,
+            listname;
+  bool      wiki_output,
+            list_output,
+            size_diff,
+            blue_checked,
+            hash,
+            csv,
+            utf8,
+            ascii,
+            tab;
+  NameListClass devs;
+
+  void Main(CaseClass c) {
+    SystemClass::ClearConsole(SystemClass::SHOWCONSOLE);
+    NameListClass devices = devs;
+
+    LocalFileClass fileout();
+    String  prev_disk = before,
+            after_disk = after,
+            OutputPath;
+    bool    wiki = wiki_output,
+            list = list_output,
+            incl_size = size_diff,
+            selected = blue_checked,
+            incl_hash = hash;
+    FileContainer   files1(null, "", "", 0),
+                    files2(null, "", "", 0);
+    SearchClass search();
+    bool bad = files1.BadChar(listname);
+    String ftype_ext = "txt",
+           ftype = "Text Files\t*.";
+
+    if (!wiki_output && !list_output && !csv && !tab) {
+       return;
+    }
+    if (devices.Find(prev_disk) == null || devices.Find(after_disk) == null) {
+       SystemClass::Message(SystemClass::ICONEXCLAMATION, "ERROR", "One of the evidence filenames written incorrectly");
+       return;
+    }
+    if (prev_disk == after_disk) {
+      SystemClass::Message(SystemClass::ICONEXCLAMATION, "ERROR", "You must choose two different disks!");
+      return;
+    }
+    if (list && bad) {
+      SystemClass::Message(SystemClass::ICONEXCLAMATION, "ERROR", "Invalid character written for Python list name!");
+      return;
+    }
+    if (list && listname == "") {
+      SystemClass::Message(SystemClass::ICONEXCLAMATION, "ERROR", "Python list name left blank!");
+      return;
+    } else {
+      ftype_ext = "py";
+      ftype = "Python Code\t*.";
+    }
+    if (SystemClass::PathDialog(OutputPath,
+                                  "Choose text output file",
+                                  ftype_ext,
+                                  ftype + ftype_ext,
+                                  SystemClass::CREATE)) {
+      if(! fileout.Open(OutputPath, FileClass::WRITETEXTCRLF)){
+        SystemClass::Message(SystemClass::ICONEXCLAMATION, "ERROR", "Output file cannot be created");
+        return;
+      }
+      if (utf8)
+        fileout.SetCodePage(CodePageClass::UTF8);
+      else if (ascii)
+        fileout.SetCodePage(CodePageClass::ANSI);
+    }
+    else {
+        SystemClass::Message(SystemClass::ICONEXCLAMATION, "ERROR", "No output file specified");
+        return;
+    }
+
+    forall (EntryClass e in c.EntryRoot()) {
+      if (!e.IsFolder() && e.FullPath().Contains(prev_disk) && (!selected || e.IsSelected())) {
+        HashClass hash;
+        if (incl_hash) {
+          hash = search.ComputeHash(e);
+        }
+        if(!incl_hash || !hash.IsValid())
+          hash = "";
+        String     path = e.FullPath();
+        path.ToLower();
+        new FileContainer(files1, path, String(hash), e.LogicalSize());
+      } else if (! e.IsFolder() && e.FullPath().Contains(after_disk) && (!selected || e.IsSelected())) {
+        HashClass hash;
+        if (incl_hash) {
+          hash = search.ComputeHash(e);
+        }
+        if(!incl_hash || !hash.IsValid())
+          hash = "";
+        new FileContainer(files2, e.FullPath(), hash, e.LogicalSize());
+      }
+    }
+    if (wiki) {
+      Console.WriteLine("| Change | File | Original Size | Original Hash | New Size | New Hash |");
+      fileout.WriteLine("| Change | File | Original Size | Original Hash | New Size | New Hash |");
+    }
+    else if (csv) {
+      Console.WriteLine("Change" + char + "File" + char + "Original Size" + char + "Original Hash" + char + "New Size" + char + "New Hash");
+      fileout.WriteLine("Change" + char + "File" + char + "Original Size" + char + "Original Hash" + char + "New Size" + char + "New Hash");
+    }
+    else if (tab) {
+      Console.WriteLine(" Change\tFile\tOriginal Size\tOriginal Hash\tNew Size\tNew Hash");
+      fileout.WriteLine(" Change\tFile\tOriginal Size\tOriginal Hash\tNew Size\tNew Hash");
+    }
+    else if (list) {
+      Console.WriteLine(listname + " = [ ");
+      fileout.WriteLine(listname + " = [ ");
+    }
+    foreach (FileContainer f2 in files2) {
+      String           path = f2.Name();
+      path.Replace(c.Name() + "\\" + after_disk, c.Name() + "\\" + prev_disk);
+      path.ToLower();
+      FileContainer    temp = files1.Find(path);
+      if (temp == null || ((incl_size || incl_hash) && (temp.mySize != f2.mySize || temp.myHash != f2.myHash))) {
+        if (wiki) {
+          f2.PrintWiki(fileout, incl_hash, temp);
+        }
+        else if (csv) {
+          f2.PrintCSV(fileout, incl_hash, temp, char);
+        }
+        else if (tab) {
+          f2.PrintCSV(fileout, incl_hash, temp, "\t");
+        }
+        else if (list){
+          f2.PrintPythonList(fileout, incl_hash, temp, devices, c);
+        }
+      }
+      else
+        files1.Remove(temp);
+    }
+    if (list) {
+      Console.WriteLine("]");
+      fileout.WriteLine("]");
+    }
+  }
+
+  class FilterDialogClass: DialogClass {
+    CheckBoxClass       wiki_output,
+                        list_output;
+    StringEditClass     list_name;
+    CheckBoxClass       tab,
+                        csv;
+    StringEditClass     char;
+    CheckBoxClass       size_diff,
+                        blue_checked,
+                        hash,
+                        utf8,
+                        ascii;
+    ListEditClass       ListOrig, ListDiff;
+    MainClass           Main;
+
+    FilterDialogClass(DialogClass parent, MainClass v):
+      Main = v,
+      DialogClass(parent, "Options"),
+      wiki_output(this, "Wiki Output", START, NEXT, 100, 12, 0, v.wiki_output),
+      list_output(this, "Python List Output", START, NEXT, 100, 24, 0, v.list_output),
+      list_name(this, "List Name", 120, SAME, 100, LEFT, 0, v.listname, 20, 0),
+      tab(this, "TAB Delimted Output", START, NEXT, 100, 24, 0, v.tab),
+      csv(this, "CSV Output", 120, SAME, 100, 24, 0, v.csv),
+      char(this, "Character", 220, SAME, 10, LEFT, 0, v.char, 2, 0),
+      size_diff(this, "Include size differences in output?", START, NEXT, 100, 12, 0, v.size_diff),
+      blue_checked(this, "Selected files only?", START, NEXT, 100, 12, 0, v.blue_checked),
+      hash(this, "Compare Hashes?", START, NEXT, 100, 12, 0, v.hash),
+      utf8(this, "UTF-8?", START, NEXT, 100, 12, 0, v.utf8),
+      ascii(this, "ASCII?", 110, SAME, 100, 12, 0, v.ascii),
+      ListOrig(this, "Original Disk (Double Click To Select)", DEFAULT, NEXT, 500, 64, 0, v.devs, ListEditClass::CANVIEWNODES),
+      ListDiff(this, "Differential Disk (Double Click To Select)", DEFAULT, NEXT, 500, 64, 0, v.devs, ListEditClass::CANVIEWNODES)
+    {
+    }
+    virtual void CheckControls() {
+      DialogClass::CheckControls();
+      EnableClose(wiki_output.GetValue() || list_output.GetValue() || csv.GetValue() || tab.GetValue());
+    }
+    virtual void ChildEvent(const EventClass &evt) {
+      DialogClass::ChildEvent(evt);
+      if (ListOrig.Matches(evt) && evt.Type() == CHILDSELECTNODE) {
+        NameListClass n = NameListClass::TypeCast(ListOrig.GetValue());
+        if (n) {
+          Main.before = n.Name();
+        }
+      }
+      if (ListDiff.Matches(evt) && evt.Type() == CHILDSELECTNODE) {
+        NameListClass n = NameListClass::TypeCast(ListDiff.GetValue());
+        if (n) {
+          Main.after = n.Name();
+        }
+      }
+      if (wiki_output.Matches(evt)) {
+        if (wiki_output.GetValue()) {
+          list_output.Enable(false);
+          char.Enable(false);
+          csv.Enable(false);
+          tab.Enable(false);
+          list_name.Enable(false);
+        } else {
+          list_output.Enable(true);
+          char.Enable(true);
+          csv.Enable(true);
+          tab.Enable(true);
+          list_name.Enable(true);
+        }
+      } else if(list_output.Matches(evt)) {
+        if ( list_output.GetValue()) {
+          wiki_output.Enable(false);
+          char.Enable(false);
+          csv.Enable(false);
+          tab.Enable(false);
+        } else {
+          wiki_output.Enable(true);
+          char.Enable(true);
+          csv.Enable(true);
+          tab.Enable(true);
+        }
+      } else if(csv.Matches(evt)) {
+        if (csv.GetValue()) {
+          wiki_output.Enable(false);
+          list_output.Enable(false);
+          tab.Enable(false);
+          list_name.Enable(false);
+        } else {
+          wiki_output.Enable(true);
+          list_output.Enable(true);
+          tab.Enable(true);
+          list_name.Enable(true);
+        }
+      } else if(tab.Matches(evt)) {
+        if (tab.GetValue()) {
+          wiki_output.Enable(false);
+          list_output.Enable(false);
+          csv.Enable(false);
+          char.Enable(false);
+          list_name.Enable(false);
+        } else {
+          wiki_output.Enable(true);
+          list_output.Enable(true);
+          csv.Enable(true);
+          char.Enable(true);
+          list_name.Enable(true);
+        }
+      } else if(utf8.Matches(evt)) {
+        if (utf8.GetValue()) {
+          ascii.Enable(false);
+        } else {
+          ascii.Enable(true);
+        }
+      } else if(ascii.Matches(evt)) {
+        if (ascii.GetValue()) {
+          utf8.Enable(false);
+        } else {
+          utf8.Enable(true);
+        }
+      }
+    }
+  }
+
+  MainClass() {
+    String usageText = "This script will output the files that are different (size, hash, new) in one\n"
+    "disk image compared to an original image.  Good for pre/post infections to see what files changed\n\n"
+    "Press OK to continue and cancel to exit\n";
+    int mbResponse = SystemClass::Message(SystemClass::MBOKCANCEL, "Differential", usageText);
+    if (mbResponse == SystemClass::CANCEL) {
+      return;
+    }
+    devs = new NameListClass(null, "");
+    forall (CaseClass cas in GlobalDataClass::CaseRoot()) {
+      forall (DeviceClass d in cas.DeviceRoot()) {
+        new NameListClass (devs, d.FullPath());
+      }
+    }
+    char = ",";
+    FilterDialogClass dialog(null, this);
+    if (dialog.Execute() != SystemClass::OK)
+      return;
+  }
+}
