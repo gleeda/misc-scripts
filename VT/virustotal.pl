@@ -141,7 +141,7 @@ sub posthash {
         $url = $res->header("Location");
 
     print "getting from $url\n";
-    if ($url !~ /(report|id)/) {
+    if ($url !~ /(report|id|analysis)/) {
       print INDEX "$HASH (not found)</td><td align=center><font color=\"blue\">N/A</font></td></tr>\n";
       close(OUT);
       unlink "$HASH.html";
@@ -156,15 +156,15 @@ sub posthash {
       if ($res->is_success) {
         print OUT $res->content;
         $content = $res->content;
-        if ($content =~ m/<span id=\"porcentaje\"\s+style=\"color\:\s+red\">(.*?)<\/span>/ism) {
-            if ($1 > 0){
-               print INDEX "<b><font color=\"red\">" . $1."<\/font><\/b>\/";
+        if ($content =~ m/<td class=\" text-red \">(.*?)<\/td>/ism) {
+            $num = split /\/ [0-9][0-9]/, $1;
+            if ($num > 0){
+               print INDEX "<b><font color=\"red\">" . $num."<\/font><\/b>\/";
             }else{
-               print INDEX "<b>" . $1."<\/b>\/";
+               print INDEX "<b>" . $num."<\/b>\/";
             }
-        }
-        if ($content =~ m/<span id=\"status-total\">\/(.*?)<\/span>/ism) {
-            print INDEX $1."</td></tr>\n";
+            @total_av = split /\//, $1; 
+            print INDEX $total_av[1]."</td></tr>\n";
         }
       }
       else {
