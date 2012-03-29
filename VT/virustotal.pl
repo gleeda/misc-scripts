@@ -165,7 +165,10 @@ sub posthash {
             }
             @total_av = split /\//, $1; 
             print INDEX $total_av[1]."</td></tr>\n";
-        }
+        } elsif ($content =~ m/<td class=\" text-green \">(.*?)<\/td>/ism) {
+            @total_av = split /\//, $1; 
+            print INDEX "<font color=\"blue\">0</font> / " . $total_av[1] . "</td></tr>\n";
+         }   
       }
       else {
         print $res->status_line, "\n";
