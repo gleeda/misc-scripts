@@ -125,7 +125,7 @@ class MBRParser:
         h.update(self.BootCode)
         print "Bootcode md5: {0}\n".format(h.hexdigest())
     
-        iterable = distorm3.DecodeGenerator(0, self.BootCode, distorm3.Decode32Bits)
+        iterable = distorm3.DecodeGenerator(0, self.BootCode, distorm3.Decode16Bits)
         ret = "" 
         for (offset, size, instruction, hexdump) in iterable:
             ret += "%.8x: %-32s %s\n" % (offset, hexdump, instruction)
