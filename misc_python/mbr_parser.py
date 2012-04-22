@@ -13,6 +13,14 @@ This program is free software; you can redistribute it and/or
 modify it under the terms of the GNU General Public License
 as published by the Free Software Foundation; either version
 2 of the License, or (at your option) any later version.
+
+ Using structures defined in File System Forensic Analysis pg 88+
+ boot code is from bytes 0-439 in the partition table
+ we should dissassemble
+
+ extra partition types taken from Gary Kessler's MBRParser.pl:
+    http://www.garykessler.net/software/index.html
+
 '''
 
 PartitionTypes = { 
@@ -29,16 +37,26 @@ PartitionTypes = {
     0x11:"Hidden FAT12,CHS",
     0x14:"Hidden FAT16,16-32MB,CHS",
     0x16:"Hidden FAT16,32MB-2GB,CHS",
+    0x18:"AST SmartSleep Partition",
     0x1b:"Hidden FAT32,CHS",
     0x1c:"Hidden FAT32,LBA",
     0x1e:"Hidden FAT16,32MB-2GB,LBA",
+    0x27:"PQservice",
+    0x39:"Plan 9 partition",
+    0x3c:"PartitionMagic recovery partition",
     0x42:"Microsoft MBR,Dynamic Disk",
+    0x44:"GoBack partition",
+    0x51:"Novell",
+    0x52:"CP/M",
+    0x63:"Unix System V",
+    0x64:"PC-ARMOUR protected partition",
     0x82:"Solaris x86 or Linux Swap",
     0x83:"Linux",
     0x84:"Hibernation",
     0x85:"Linux Extended",
     0x86:"NTFS Volume Set",
     0x87:"NTFS Volume Set",
+    0x9f:"BSD/OS",
     0xa0:"Hibernation",
     0xa1:"Hibernation",
     0xa5:"FreeBSD",
@@ -46,8 +64,15 @@ PartitionTypes = {
     0xa8:"Mac OSX",
     0xa9:"NetBSD",
     0xab:"Mac OSX Boot",
+    0xaf:"MacOS X HFS",
     0xb7:"BSDI",
     0xb8:"BSDI Swap",
+    0xbb:"Boot Wizard hidden",
+    0xbe:"Solaris 8 boot partition",
+    0xd8:"CP/M-86",
+    0xde:"Dell PowerEdge Server utilities (FAT fs)",
+    0xdf:"DG/UX virtual disk manager partition",
+    0xeb:"BeOS BFS",
     0xee:"EFI GPT Disk",
     0xef:"EFI System Parition",
     0xfb:"VMWare File System",
