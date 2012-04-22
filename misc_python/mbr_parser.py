@@ -161,10 +161,10 @@ class MBRParser:
         processed_entry = "Boot flag: {0:#x} {1}\n".format(bootable, "(Bootable)" if bootable == 0x80 else '')
         processed_entry += "Partition type: {0:#x} ({1})\n".format(self.get_value(entry.PartitionType), type)
         processed_entry += "Starting Sector (LBA): {0:#x} ({0})\n".format(entry.StartLBA)
-        processed_entry += "Starting CHS: Cylander: {2} Head: {0} Sector: {1}\n".format(entry.StartCHS0,
+        processed_entry += "Starting CHS: Cylinder: {2} Head: {0} Sector: {1}\n".format(entry.StartCHS0,
                     self.get_sector(entry.StartCHS1),
                     self.get_cylinder(entry.StartCHS1, entry.StartCHS2))
-        processed_entry += "Ending CHS: Cylander: {2} Head: {0} Sector: {1}\n".format(entry.EndCHS0,
+        processed_entry += "Ending CHS: Cylinder: {2} Head: {0} Sector: {1}\n".format(entry.EndCHS0,
                     self.get_sector(entry.EndCHS1),
                     self.get_cylinder(entry.EndCHS1, entry.EndCHS2))
         processed_entry += "Size in sectors: {0:#x} ({0})\n\n".format(entry.SizeInSectors)
