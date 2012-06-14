@@ -111,30 +111,47 @@ class MBRParser:
         self.BootCode = data[:440]
 
     def print_self(self):
+        lines = []
         E0 = self.process_entry(self.PartitionTable.Entry0)
         E1 = self.process_entry(self.PartitionTable.Entry1)
         E2 = self.process_entry(self.PartitionTable.Entry2)
         E3 = self.process_entry(self.PartitionTable.Entry3)
 
-        print "Disk signature: {0:02x}-{1:02x}-{2:02x}-{3:02x}\n".format(self.PartitionTable.DiskSignature0, 
+        lines.append("Disk signature: {0:02x}-{1:02x}-{2:02x}-{3:02x}\n".format(self.PartitionTable.DiskSignature0, 
             self.PartitionTable.DiskSignature1, 
             self.PartitionTable.DiskSignature2, 
-            self.PartitionTable.DiskSignature3)
+            self.PartitionTable.DiskSignature3))
 
         h = hashlib.md5()
         h.update(self.BootCode)
-        print "Bootcode md5: {0}\n".format(h.hexdigest())
+        lines.append("Bootcode md5: {0}\n".format(h.hexdigest()))
     
         iterable = distorm3.DecodeGenerator(0, self.BootCode, distorm3.Decode16Bits)
         ret = "" 
         for (offset, size, instruction, hexdump) in iterable:
-            ret += "%.8x: %-32s %s\n" % (offset, hexdump, instruction)
-        print "Bootcode Disassembly:\n\n{0}\n".format(ret)
+            if instruction == "RET":
+                ret += "0x%.8x: %-32s %s\n" % (offset, hexdump, instruction)
+                hexstuff = "\n" + "\n".join(["{0:#010x}:  {1:<48}  {2}".format(o, h, ''.join(c)) for o, h, c in self.Hexdump(self.BootCode[offset + size:], offset + size)])
+                ret += hexstuff
+                break
+            ret += "0x%.8x: %-32s %s\n" % (offset, hexdump, instruction)
+        lines.append("Bootcode Disassembly:\n\n{0}\n".format(ret))
 
-        print "===== Partition Table #1 =====\n{0}\n".format(E0)
-        print "===== Partition Table #2 =====\n{0}\n".format(E1)
-        print "===== Partition Table #3 =====\n{0}\n".format(E2)
-        print "===== Partition Table #4 =====\n{0}\n".format(E3)
+        lines.append("===== Partition Table #1 =====\n{0}\n".format(E0))
+        lines.append("===== Partition Table #2 =====\n{0}\n".format(E1))
+        lines.append("===== Partition Table #3 =====\n{0}\n".format(E2))
+        lines.append("===== Partition Table #4 =====\n{0}\n".format(E3))
+        lines.append("Valid Signature (0xaa55): {0} => (0x{1:x})\n".format(self.PartitionTable.Signature == 0xaa55, self.PartitionTable.Signature))
+
+        return lines
+
+    def Hexdump(self, data, given_offset = 0, width = 16):
+        for offset in xrange(0, len(data), width):
+            row_data = data[offset:offset + width]
+            translated_data = [x if ord(x) < 127 and ord(x) > 32 else "." for x in row_data]
+            hexdata = " ".join(["{0:02x}".format(ord(x)) for x in row_data])
+
+            yield offset + given_offset, hexdata, translated_data
 
     def get_value(self, char):
         padded = "\x00\x00\x00" + str(char)
@@ -142,10 +159,7 @@ class MBRParser:
         return val
 
     def get_type(self, PartitionType):
-        try:
-            type = PartitionTypes[PartitionType]
-        except KeyError:
-            type = "Invalid"
+        type = PartitionTypes.get(PartitionType, "Invalid")
         return type
 
     def get_sector(self, raw_sector):
@@ -198,7 +212,9 @@ def main():
 
     data = file.read(512)
     myMBR = MBRParser(data)
-    myMBR.print_self()
+    lines = myMBR.print_self()
+    for l in lines:
+        print l
 
 if __name__ == "__main__":
     main()
