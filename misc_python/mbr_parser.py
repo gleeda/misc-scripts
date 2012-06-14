@@ -129,12 +129,11 @@ class MBRParser:
         iterable = distorm3.DecodeGenerator(0, self.BootCode, distorm3.Decode16Bits)
         ret = "" 
         for (offset, size, instruction, hexdump) in iterable:
+            ret += "0x%.8x: %-32s %s\n" % (offset, hexdump, instruction)
             if instruction == "RET":
-                ret += "0x%.8x: %-32s %s\n" % (offset, hexdump, instruction)
                 hexstuff = "\n" + "\n".join(["{0:#010x}:  {1:<48}  {2}".format(o, h, ''.join(c)) for o, h, c in self.Hexdump(self.BootCode[offset + size:], offset + size)])
                 ret += hexstuff
                 break
-            ret += "0x%.8x: %-32s %s\n" % (offset, hexdump, instruction)
         lines.append("Bootcode Disassembly:\n\n{0}\n".format(ret))
 
         lines.append("===== Partition Table #1 =====\n{0}\n".format(E0))
