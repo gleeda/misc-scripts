@@ -132,7 +132,7 @@ class MainClass {
     if (list && listname == "") {
       SystemClass::Message(SystemClass::ICONEXCLAMATION, "ERROR", "Python list name left blank!");
       return;
-    } else {
+    } else if (list) {
       ftype_ext = "py";
       ftype = "Python Code\t*.";
     }
