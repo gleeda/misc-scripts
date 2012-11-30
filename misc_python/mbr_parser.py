@@ -124,16 +124,21 @@ class MBRParser:
 
         h = hashlib.md5()
         h.update(self.BootCode)
-        lines.append("Bootcode md5: {0}\n".format(h.hexdigest()))
+        partial = self.BootCode
+        p = hashlib.md5()
+        lines.append("Full Bootcode md5: {0}\n".format(h.hexdigest()))
     
         iterable = distorm3.DecodeGenerator(0, self.BootCode, distorm3.Decode16Bits)
         ret = "" 
         for (offset, size, instruction, hexdump) in iterable:
             ret += "0x%.8x: %-32s %s\n" % (offset, hexdump, instruction)
             if instruction == "RET":
+                partial = self.BootCode[0:offset + size]
                 hexstuff = "\n" + "\n".join(["{0:#010x}:  {1:<48}  {2}".format(o, h, ''.join(c)) for o, h, c in self.Hexdump(self.BootCode[offset + size:], offset + size)])
                 ret += hexstuff
                 break
+        p.update(partial)
+        lines.append("Bootcode (up to RET) md5: {0}\n".format(p.hexdigest()))
         lines.append("Bootcode Disassembly:\n\n{0}\n".format(ret))
 
         lines.append("===== Partition Table #1 =====\n{0}\n".format(E0))
