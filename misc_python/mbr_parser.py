@@ -106,11 +106,36 @@ class PartitionTable:
         self.Signature = struct.unpack("<H", data[70:72])[0]  
 
 class MBRParser:
-    def __init__(self, data):
-        self.PartitionTable = PartitionTable(data[440:])
+    def __init__(self, data, disonly = False):
+        self.disonly = disonly
         self.BootCode = data[:440]
+        if len(data) >= 512:
+            self.PartitionTable = PartitionTable(data[440:])
+
+    def disassembly_only(self):
+        lines = []
+        h = hashlib.md5()
+        h.update(self.BootCode)
+        partial = self.BootCode
+        p = hashlib.md5()
+        lines.append("Full Bootcode md5: {0}\n".format(h.hexdigest()))
+   
+        iterable = distorm3.DecodeGenerator(0, self.BootCode, distorm3.Decode16Bits)
+        ret = ""
+        for (offset, size, instruction, hexdump) in iterable:
+            ret += "0x%.8x: %-32s %s\n" % (offset, hexdump, instruction)
+            if instruction == "RET":
+                partial = self.BootCode[0:offset + size]
+                hexstuff = "\n" + "\n".join(["{0:#010x}:  {1:<48}  {2}".format(o, h, ''.join(c)) for o, h, c in self.Hexdump(self.BootCode[offset + size:], offset + size)])
+                ret += hexstuff
+                break
+        lines.append(ret)
+        return lines
+
 
     def print_self(self):
+        if self.disonly:
+            return self.disassembly_only()
         lines = []
         E0 = self.process_entry(self.PartitionTable.Entry0)
         E1 = self.process_entry(self.PartitionTable.Entry1)
@@ -122,24 +147,7 @@ class MBRParser:
             self.PartitionTable.DiskSignature2, 
             self.PartitionTable.DiskSignature3))
 
-        h = hashlib.md5()
-        h.update(self.BootCode)
-        partial = self.BootCode
-        p = hashlib.md5()
-        lines.append("Full Bootcode md5: {0}\n".format(h.hexdigest()))
-    
-        iterable = distorm3.DecodeGenerator(0, self.BootCode, distorm3.Decode16Bits)
-        ret = "" 
-        for (offset, size, instruction, hexdump) in iterable:
-            ret += "0x%.8x: %-32s %s\n" % (offset, hexdump, instruction)
-            if instruction == "RET":
-                partial = self.BootCode[0:offset + size]
-                hexstuff = "\n" + "\n".join(["{0:#010x}:  {1:<48}  {2}".format(o, h, ''.join(c)) for o, h, c in self.Hexdump(self.BootCode[offset + size:], offset + size)])
-                ret += hexstuff
-                break
-        p.update(partial)
-        lines.append("Bootcode (up to RET) md5: {0}\n".format(p.hexdigest()))
-        lines.append("Bootcode Disassembly:\n\n{0}\n".format(ret))
+        lines += self.disassembly_only()
 
         lines.append("===== Partition Table #1 =====\n{0}\n".format(E0))
         lines.append("===== Partition Table #2 =====\n{0}\n".format(E1))
@@ -215,7 +223,14 @@ def main():
         return
 
     data = file.read(512)
-    myMBR = MBRParser(data)
+    if len(data) == 512:
+        myMBR = MBRParser(data)
+    elif len(data) == 440:
+        myMBR = MBRParser(data, True)
+    else:
+        print "MBR file too small"
+        return
+
     lines = myMBR.print_self()
     for l in lines:
         print l
