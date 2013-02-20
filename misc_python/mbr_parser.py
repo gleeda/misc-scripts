@@ -213,7 +213,7 @@ def main():
             usage()
             sys.exit(2)
         elif o in ("-f", "--file"):
-            file = open(a,'r')
+            file = open(a,'rb')
         else:
             assert False, "unhandled option\n\n"
             sys.exit(2)
