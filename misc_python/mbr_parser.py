@@ -114,11 +114,10 @@ class MBRParser:
 
     def disassembly_only(self):
         lines = []
-        h = hashlib.md5()
-        h.update(self.BootCode)
+        full = hashlib.md5()
+        full.update(self.BootCode)
         partial = self.BootCode
         p = hashlib.md5()
-        lines.append("Full Bootcode md5: {0}\n".format(h.hexdigest()))
    
         iterable = distorm3.DecodeGenerator(0, self.BootCode, distorm3.Decode16Bits)
         ret = ""
@@ -129,6 +128,9 @@ class MBRParser:
                 hexstuff = "\n" + "\n".join(["{0:#010x}:  {1:<48}  {2}".format(o, h, ''.join(c)) for o, h, c in self.Hexdump(self.BootCode[offset + size:], offset + size)])
                 ret += hexstuff
                 break
+        p.update(partial)
+        lines.append("Bootcode md5 (up to RET): {0}".format(p.hexdigest()))
+        lines.append("Full Bootcode md5:        {0}\n".format(full.hexdigest()))
         lines.append(ret)
         return lines
 
