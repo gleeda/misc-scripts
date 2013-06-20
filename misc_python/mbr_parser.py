@@ -1,3 +1,4 @@
+#!/usr/bin/env python
 import distorm3
 import getopt, sys
 import hashlib
