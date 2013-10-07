@@ -156,7 +156,7 @@ class MainClass {
     }
 
     forall (EntryClass e in c.EntryRoot()) {
-      if (!e.IsFolder() && e.FullPath().Contains(prev_disk) && (!selected || e.IsSelected())) {
+      if (!e.IsFolder() && e.FullPath().Contains(prev_disk + "\\") && (!selected || e.IsSelected())) {
         HashClass hash;
         if (incl_hash) {
           hash = search.ComputeHash(e);
@@ -166,7 +166,7 @@ class MainClass {
         String     path = e.FullPath();
         path.ToLower();
         new FileContainer(files1, path, String(hash), e.LogicalSize());
-      } else if (! e.IsFolder() && e.FullPath().Contains(after_disk) && (!selected || e.IsSelected())) {
+      } else if (! e.IsFolder() && e.FullPath().Contains(after_disk + "\\") && (!selected || e.IsSelected())) {
         HashClass hash;
         if (incl_hash) {
           hash = search.ComputeHash(e);
@@ -194,7 +194,7 @@ class MainClass {
     }
     foreach (FileContainer f2 in files2) {
       String           path = f2.Name();
-      path.Replace(c.Name() + "\\" + after_disk, c.Name() + "\\" + prev_disk);
+      path.Replace(c.Name() + "\\" + after_disk + "\\", c.Name() + "\\" + prev_disk + "\\");
       path.ToLower();
       FileContainer    temp = files1.Find(path);
       if (temp == null || ((incl_size || incl_hash) && (temp.mySize != f2.mySize || temp.myHash != f2.myHash))) {
