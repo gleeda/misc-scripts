@@ -1,0 +1,105 @@
+/*
+ *  Author: Jamie Levy (Gleeda) jamie.levy@gmail.com
+ *
+ *  Baseliner.EnScript
+ *
+ *  Creates a SQLite database of Path, Hash and Size of all DLL files 
+ *  in disk images from a created case.
+ */
+
+include "GSI_LogLib"
+include "GSI_Basic"
+
+class MainClass {
+  long   RecordsAdded,
+         RecordsFailed;
+  String TableCreateQuery,
+         InsertQuery,
+         OutputPath;
+
+MainClass():
+    TableCreateQuery
+    (
+      "CREATE TABLE entries(id INTEGER PRIMARY KEY ASC AUTOINCREMENT, path TEXT, hash TEXT, size INTEGER)"
+    ),
+    InsertQuery
+    (
+      "INSERT INTO entries(path, hash, size) VALUES ('{0}', '{1}', '{2}')"
+    )
+{
+}
+  void Main(CaseClass c) {
+    LocalFileClass   SQLiteFile();
+    SQLiteClass SQLiteData();
+    SystemClass::ClearConsole(SystemClass::SHOWCONSOLE);
+
+    if (c)
+    {
+      NameListClass devices();
+      SearchClass search();
+      forall (DeviceClass d in c.DeviceRoot()) {
+        Console.WriteLine("Device Name = "+d.Name());
+        Console.WriteLine("Device FullPath = "+d.FullPath());
+        new NameListClass (devices, d.FullPath());
+      }
+
+      if (SystemClass::PathDialog(OutputPath,
+                                  "Choose SQLite output file",
+                                  "sqlite",
+                                  "SQLite Files\t*.sqlite",
+                                  SystemClass::CREATE))
+      {
+      LocalFileClass   SQLiteFile();
+      if (SQLiteFile.Open(OutputPath, FileClass::APPEND))
+      {
+        if (SQLiteData.Open(SQLiteFile, SQLiteClass::SQLITE_OPEN_READWRITE))
+        {
+          SQLiteClass::CommandClass command();
+          if (SQLiteData.CreateCommand(command))
+          {
+            if (command.ExecuteNonQuery(TableCreateQuery))
+             Console.WriteLine("Table Created");
+             forall (EntryClass e in c.EntryRoot())
+             {
+               if (e.Extension().Compare("dll") == 0)
+               {
+                 String path = e.FullPath();
+                 foreach (NameListClass d in devices){              
+                   path.Replace(c.Name() + "\\" + d.Name() + "\\", "");
+                 }  
+                 HashClass hash = search.ComputeHash(e);
+                 if(!hash.IsValid()) 
+                   hash = "none";
+                 if (command.ExecuteNonQuery(String::Format(InsertQuery, escapeQuotes(path),
+                   hash,
+                   e.LogicalSize())))
+                 {
+                   Console.WriteLine(String::Format("Record added to database for '{0}'", e.Name()));
+                   ++RecordsAdded;
+                 }
+                 else
+                 {
+                   Console.WriteLine(String::Format("Couldn't add record: {0}", SystemClass::LastError()));
+                   ++RecordsFailed;
+                 }
+               }
+             }
+             Console.WriteLine(String::Format("Records added: {0}", RecordsAdded));
+             Console.WriteLine(String::Format("Records that couldn't be added: {0}", RecordsFailed));
+             Console.WriteLine("Script finished");
+             }
+           }
+         }
+      }
+    }
+  }
+
+  String escapeQuotes(const String &input)
+  {
+    String retval = input;
+    retval.Replace("'", "''");
+    return retval;
+  }
+
+}
+
