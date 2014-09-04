@@ -1,0 +1,163 @@
+<!doctype html>
+<meta charset="utf-8">
+<style>
+  
+</style>
+<body>
+<script src="d3.v3.min.js" type="text/javascript"></script>
+<script>
+var 
+  n = 20, // square root of number of nodes
+  m = 1500, // number of data
+  d = 3, // dimension of data 
+  sen = 10, //size of each node (pixel)
+  nodes = [],
+  data = []
+; 
+ 
+function random(){
+  return Math.floor(Math.random() * 256);
+}
+ 
+// generate data
+for(var i = 0; i < m; i++){
+  data.push([random(), random(), random()]);
+}
+ 
+// initialize nodes
+for(var i = 0; i < n * n; i++){
+  nodes.push({
+    x: i % n,
+    y: Math.floor(i / n),
+    value: [random(), random(), random()]
+  });
+}
+ 
+function rgb(array){
+  return 'rgb('+ array.map(function(r){return Math.round(r);}).join(',') +')';
+}
+ 
+var 
+  svg = d3.select('body').append('svg').attr('width', 600).attr('height', 600),
+  margin = 30,
+  width = n * sen,
+  height = n * sen
+;
+ 
+var 
+  rgb_nodes = svg.append('g').attr('class','nodes all'),
+  r_nodes = svg.append('g').attr('class','nodes r').attr('transform', 'translate(' + (width + margin) +', 0)'),
+  g_nodes = svg.append('g').attr('class','nodes g').attr('transform', 'translate(0, ' + (height + margin) + ')'),
+  b_nodes = svg.append('g').attr('class','nodes b').attr('transform', 'translate(' + (width + margin)  +', ' + (height + margin) +')');
+ 
+rgb_nodes
+  .selectAll('rect')
+  .data(nodes)
+  .enter().append('rect')
+    .attr('x', function(node){return node.x * sen;})
+    .attr('y', function(node){return node.y * sen;})
+    .attr('width', sen)
+    .attr('height', sen)
+    .style('fill', function(node){return rgb(node.value);})
+ 
+r_nodes
+  .selectAll('rect')
+  .data(nodes)
+  .enter().append('rect')
+    .attr('x', function(node){return node.x * sen;})
+    .attr('y', function(node){return node.y * sen;})
+    .attr('width', sen)
+    .attr('height', sen)
+    .style('fill', function(node){return rgb([node.value[0], 0, 0]);})
+ 
+g_nodes
+  .selectAll('rect')
+  .data(nodes)
+  .enter().append('rect')
+    .attr('x', function(node){return node.x * sen;})
+    .attr('y', function(node){return node.y * sen;})
+    .attr('width', sen)
+    .attr('height', sen)
+    .style('fill', function(node){return rgb([0, node.value[1], 0]);})
+ 
+b_nodes
+  .selectAll('rect')
+  .data(nodes)
+  .enter().append('rect')
+    .attr('x', function(node){return node.x * sen;})
+    .attr('y', function(node){return node.y * sen;})
+    .attr('width', sen)
+    .attr('height', sen)
+    .style('fill', function(node){return rgb([0, 0, node.value[2]]);})
+ 
+ 
+// labels
+rgb_nodes.append('text').text('rgb').attr('x', width / 2 ).attr('y', height + 20).style('text-anchor', 'middle');
+r_nodes.append('text').text('r').attr('x', width / 2 ).attr('y', height + 20).style('text-anchor', 'middle');
+g_nodes.append('text').text('g').attr('x', width / 2 ).attr('y', height + 20).style('text-anchor', 'middle');
+b_nodes.append('text').text('b').attr('x', width / 2 ).attr('y', height + 20).style('text-anchor', 'middle');
+ 
+ 
+function distance3(a, b){
+  return (b[0] - a[0]) * (b[0] - a[0]) + (b[1] - a[1]) * (b[1] - a[1]) + (a[2] - b[2]) * (a[2] - b[2]);
+}
+ 
+function distance2(a, b){
+  return (b[0] - a[0]) * (b[0] - a[0]) + (b[1] - a[1]) * (b[1] - a[1]);
+}
+ 
+function learn(r, alpha){
+  var datum,
+      min_distance,
+      min_node,
+      cd,
+      r2 = r * r,
+      d2
+  ;
+ 
+  for(var i = 0; i < m; i++){ //for each datum
+    datum = data[i];
+    min_distance = Number.MAX_VALUE;
+    for(var j = 0; j < n * n; j++){ //for each node
+      cd = distance3(datum, nodes[j].value);
+      if(min_distance > cd){
+        min_distance = cd;
+        min_node = nodes[j];
+      }
+    }
+ 
+    for(var j = 0; j < n * n; j++){
+      d2 = distance2([nodes[j].x, nodes[j].y], [min_node.x, min_node.y]);
+      if(d2 < r2){
+        for(var k = 0; k < d; k++){
+          nodes[j].value[k] += alpha * Math.sqrt(d2 / r2) * (datum[k] - nodes[j].value[k]);
+        }
+      }
+    }
+  }
+}
+ 
+function update(){
+  rgb_nodes.selectAll('rect').transition().style('fill', function(node){return rgb(node.value);});
+  r_nodes.selectAll('rect').transition().style('fill', function(node){return rgb([node.value[0], 0, 0]);});
+  g_nodes.selectAll('rect').transition().style('fill', function(node){return rgb([0, node.value[1], 0]);});
+  b_nodes.selectAll('rect').transition().style('fill', function(node){return rgb([0, 0, node.value[2]]);});
+}
+ 
+var r = 10, alpha = 1, iteration = 150, count = 0;
+var timer = setInterval(function(){
+  count ++;
+  if(count > iteration){
+    clearInterval(timer);
+    return;
+  }
+  learn(1 + r, alpha);
+  update();
+  r *= 0.975;
+  alpha *= 0.985;
+  console.log(1 + r, alpha);
+}, 300);
+ 
+ 
+</script>
+</body>
