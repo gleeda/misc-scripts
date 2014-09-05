@@ -48,8 +48,8 @@ var svg = d3.select("body").append("svg")
   .append("g")
     .attr("transform", "translate(" + margin.left + "," + margin.top + ")");
 
-d3.json("vol.json", function(error, flare) {
-  root = flare;
+d3.json("vol.json", function(error, vol) {
+  root = vol;
   root.x0 = height / 2;
   root.y0 = 0;
 
@@ -90,7 +90,7 @@ function update(source) {
     .attr("xlink:href", function(d) { return d.link; })
     .append("text")
     .attr("class", "clickable")
-    .attr("y", 16)
+    .attr("y", ".35em")
     .attr("x", function (d) { return d.children || d._children ? -10 : 10; })
     .attr("text-anchor", function(d) { return d.children || d._children ? "end" : "start"; })
     .text(function(d) { return d.name; })
