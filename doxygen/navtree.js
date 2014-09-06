@@ -9,7 +9,8 @@ var NAVTREE =
         [ "All", "functions.html", "functions_dup" ],
         [ "Functions", "functions_func.html", "functions_func" ],
         [ "Variables", "functions_vars.html", null ]
-      ] ]
+      ] ],
+      [ "Source Tree View", "treestuff.html", null]
     ] ]
   ] ]
 ];
