@@ -28,7 +28,12 @@ modify it under the terms of the GNU General Public License
 as published by the Free Software Foundation; either version
 2 of the License, or (at your option) any later version.
 
-Will fix this up later, but quick and dirty way to get a report on some IP addresses
+getIPInfo.py
+
+ -f <IP file>
+ -e <excel output file (default csv to stdout)>
+ -g <GeoLiteCity.dat file>
+
 '''
 
 robtex = "https://www.robtex.com/en/advisory/ip"
@@ -144,7 +149,7 @@ def main():
     ws = None
     header = ["IP Address", "Country Code", "Country Name", "Blacklisted", "Code", "Robtex Info"]
     try:
-        opts, args = getopt.getopt(sys.argv[1:], "hf:d:g:e:", ["help", "file=", "dir=", "geolitecity=", "excelfile="])
+        opts, args = getopt.getopt(sys.argv[1:], "hf:g:e:", ["help", "file=", "geolitecity=", "excelfile="])
     except getopt.GetoptError, err:
         print str(err)
         sys.exit(2)
