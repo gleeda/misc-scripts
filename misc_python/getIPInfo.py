@@ -40,7 +40,7 @@ What you need:
     2) GeoLiteCity.dat: http://dev.maxmind.com/geoip/legacy/geolite/
     3) Pygeoip: https://github.com/appliedsec/pygeoip
     4) OpenPyxl (optional, for excel output): https://pypi.python.org/pypi/openpyxl
-
+    5) Internet connection for lookups
 '''
 
 robtex = "https://www.robtex.com/en/advisory/ip"
