@@ -121,10 +121,10 @@ if has_openpyxl:
                       vertical=Side(border_style="thin",
                                     color='FF000000'),
                       horizontal=Side(border_style="thin",
-                                     color='FF000000')),
-            fill=PatternFill(start_color = "FF00FF00",
-                    end_color = "FF00FF00",
-                    fill_type = "solid"))
+                                     color='FF000000')))
+            #fill=PatternFill(start_color = "FF00FF00",
+            #        end_color = "FF00FF00",
+            #        fill_type = "solid"))
 
 def checkbl(ip):
     for server in servers:
@@ -147,9 +147,10 @@ def main():
     GeoLite = None
     wb = None
     ws = None
+    color = False
     header = ["IP Address", "Country Code", "Country Name", "Blacklisted", "Code", "Robtex Info"]
     try:
-        opts, args = getopt.getopt(sys.argv[1:], "hf:g:e:", ["help", "file=", "geolitecity=", "excelfile="])
+        opts, args = getopt.getopt(sys.argv[1:], "hf:g:e:c", ["help", "file=", "geolitecity=", "excelfile=", "coloring"])
     except getopt.GetoptError, err:
         print str(err)
         sys.exit(2)
@@ -176,6 +177,8 @@ def main():
                 print a + " is not a file"
                 usage()
                 sys.exit(-1)
+        elif o in ("-c", "--coloring"):
+            color = True
         else:
             assert False, "unhandled option\n\n"
             sys.exit(-2)
@@ -205,6 +208,8 @@ def main():
 
     if excelfile:
         wb.save(filename = excelfile)
+        if not color:
+            return
         wb = load_workbook(filename = excelfile)
         ws = wb.get_sheet_by_name(name = "IP Address Info")
         for col in xrange(1, len(header) + 1):
