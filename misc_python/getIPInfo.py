@@ -33,6 +33,7 @@ getIPInfo.py
  -f <IP file>
  -e <excel output file (default csv to stdout)>
  -g <GeoLiteCity.dat file>
+ -c [optional: this will add color to excel file]
 
 '''
 
@@ -140,6 +141,7 @@ def usage():
     print " -f <IP file>"
     print " -e <excel output file (default csv to stdout)>"
     print " -g <GeoLiteCity.dat file>"
+    print " -c [optional: this will add color to excel file]"
 
 def main():
     ipfile = None
