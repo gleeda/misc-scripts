@@ -131,10 +131,10 @@ def checkbl(ip):
     for server in servers:
         try:
             res = socket.gethostbyname(ip + '.' + server)
-            return ["Yes", codes[res]]
+            return ["Yes", codes[res], server]
         except socket.gaierror:
             pass
-    return ["", ""]
+    return ["", "", ""]
 
 def usage():
     print sys.argv[0], "\n"
@@ -150,7 +150,7 @@ def main():
     wb = None
     ws = None
     color = False
-    header = ["IP Address", "Country Code", "Country Name", "Blacklisted", "Code", "Robtex Info"]
+    header = ["IP Address", "Country Code", "Country Name", "Blacklisted", "Code", "Server", "Robtex Info"]
     try:
         opts, args = getopt.getopt(sys.argv[1:], "hf:g:e:c", ["help", "file=", "geolitecity=", "excelfile=", "coloring"])
     except getopt.GetoptError, err:
@@ -201,7 +201,7 @@ def main():
         ip = "/".join(item.split("."))
         robtex_url = "{0}/{1}".format(robtex, ip)
         bl = checkbl(rev)
-        line = [item, gistuff["country_code"], gistuff["country_name"], bl[0], bl[1], robtex_url]
+        line = [item, gistuff["country_code"], gistuff["country_name"], bl[0], bl[1], bl[2], robtex_url]
         if excelfile == None:
             print ",".join(x for x in line)
         else:
