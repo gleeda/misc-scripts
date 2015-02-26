@@ -35,6 +35,12 @@ getIPInfo.py
  -g <GeoLiteCity.dat file>
  -c [optional: this will add color to excel file]
 
+What you need:
+    1) File with IP addresses, one per line
+    2) GeoLiteCity.dat: http://dev.maxmind.com/geoip/legacy/geolite/
+    3) Pygeoip: https://github.com/appliedsec/pygeoip
+    4) OpenPyxl (optional, for excel output): https://pypi.python.org/pypi/openpyxl
+
 '''
 
 robtex = "https://www.robtex.com/en/advisory/ip"
