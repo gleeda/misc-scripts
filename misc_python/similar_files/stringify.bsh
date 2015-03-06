@@ -1,0 +1,7 @@
+#!/bin/bash
+
+strings_loc='strings.exe'  #change to location of sysinternals strings...
+mkdir -p compare
+for f in `ls *.exe`; do
+    wine $strings_loc -n 4 -q "$f" > "compare/$f.strings"
+done
