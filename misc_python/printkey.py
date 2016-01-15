@@ -1,6 +1,13 @@
 import sys
 from Registry import Registry
 
+'''
+Author: Gleeda <jamie.levy@gmail.com>
+
+Modified from one of Willi Ballenthin's sample codes
+
+usage: python printkey.py [registry] [key]
+'''
 
 reg = Registry.Registry(sys.argv[1])
 k = sys.argv[2]
