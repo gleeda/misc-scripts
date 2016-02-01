@@ -40,6 +40,14 @@ RESOURCES=()
 ##      be expanded as needed...
 ##   Very minimal error checking
 ##
+##  Usage: ./fresponse.bash
+##      -I [IP addresses, comma delimited]
+##      -P [Port for F-Response. Default: 3260]
+##      -S [Service name for F-Reponse. Default: fresponse]
+##      -L [Location to install agent. Default: C:\WINDOWS]
+##      -E [Path to F-Response executable. Default: ./f-response-ent.exe]
+##      -N [Path to F-Response INI. Default: ./f-response-ent.exe.ini]
+##
 #######################################################
 
 bad=-65
