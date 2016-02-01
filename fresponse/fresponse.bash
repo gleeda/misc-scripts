@@ -1,3 +1,4 @@
+#!/bin/bash
 # Credentials for the remote machine
 # so you can install fresponse remotely
 LOCALUSER=
