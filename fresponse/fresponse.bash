@@ -1,8 +1,8 @@
 #!/bin/bash
 # Credentials for the remote machine
 # so you can install fresponse remotely
-LOCALUSER=
-LOCALPASS=
+REMOTEUSER=
+REMOTEPASS=
 
 #IP Address of remote machine:
 IP=
@@ -61,13 +61,13 @@ fi
 
 echo "[*] Installing the F-Response driver and starting its service"
 mkdir -p /mnt/forensics
-sudo mount -t cifs -o user="$LOCALUSER%$LOCALPASS",iocharset=utf8,file_mode=0777,dir_mode=0777 //$IP/c\$ /mnt/forensics
+sudo mount -t cifs -o user="$REMOTEUSER%$REMOTEPASS",iocharset=utf8,file_mode=0777,dir_mode=0777 //$IP/c\$ /mnt/forensics
 
 sudo cp $EXE /mnt/forensics/$WIN
 sudo cp $INI /mnt/forensics/$WIN
 
-net rpc service create $SERV $SERV "%windir%\\$EXE" -I $IP -U "$LOCALUSER%$LOCALPASS"
-net rpc service start $SERV -I $IP -U "$LOCALUSER%$LOCALPASS"
+net rpc service create $SERV $SERV "%windir%\\$EXE" -I $IP -U "$REMOTEUSER%$REMOTEPASS"
+net rpc service start $SERV -I $IP -U "$REMOTEUSER%$REMOTEPASS"
 
 umount /mnt/forensics
 
@@ -143,12 +143,12 @@ iscsiadm --mode discoverydb --type sendtargets --portal $IP --op delete
 
 echo "[*] Stopping F-Response service and deleting its files"
 
-net rpc service stop $SERV -I $IP -U "$LOCALUSER%$LOCALPASS"
+net rpc service stop $SERV -I $IP -U "$REMOTEUSER%$REMOTEPASS"
 
-net rpc service delete $SERV -I $IP -U "$LOCALUSER%$LOCALPASS"
+net rpc service delete $SERV -I $IP -U "$REMOTEUSER%$REMOTEPASS"
 
 mkdir -p /mnt/forensics
-sudo mount -t cifs -o user="$LOCALUSER%$LOCALPASS",iocharset=utf8,file_mode=0777,dir_mode=0777 //$IP/c\$ /mnt/forensics
+sudo mount -t cifs -o user="$REMOTEUSER%$REMOTEPASS",iocharset=utf8,file_mode=0777,dir_mode=0777 //$IP/c\$ /mnt/forensics
 
 sleep 2
 
