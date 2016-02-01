@@ -37,19 +37,25 @@ WIN=WINDOWS
 ##
 #######################################################
 
+if [[ $EUID -ne 0 ]];
+then
+   echo "This script must be run as root" 1>&2
+   exit -1
+fi
 
-if [ ! -f $EXE ];
+
+if [[ ! -f $EXE ]];
 then
    echo "File $EXE does not exist."
    echo "Please copy $EXE into this directory."
-   exit
+   exit -1
 fi
 
-if [ ! -f $INI ];
+if [[ ! -f $INI ]];
 then
    echo "File $INI does not exist."
    echo "Please copy $INI into this directory."
-   exit
+   exit -1
 fi
 
 
@@ -120,6 +126,8 @@ echo
 echo
 echo
 
+echo "[*] Use another shell for analysis"
+echo "    Note: you must be root in order to access the devices"
 echo "[*] Press [ENTER] to disconnect....."
 
 read any
