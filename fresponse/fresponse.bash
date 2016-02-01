@@ -1,11 +1,11 @@
-#!/bin/bash
 # Credentials for the remote machine
 # so you can install fresponse remotely
 REMOTEUSER=
 REMOTEPASS=
 
-#IP Address of remote machine:
-IP=
+# IP addresses of remote machines:
+# example IPs below, replace with your own:
+IPs=(192.168.1.143 192.168.1.134)
 
 # F-Response Enterprise agent and INI file
 # You can change the name of the executable
@@ -17,11 +17,15 @@ INI=f-response-ent.exe.ini
 PORT=3260
 # F-Response username and password:
 FRUSER=
-FRPASS=  
+FRPASS=
 # Name of service on remote machine:
 SERV=fresponse  
 # Location of agent and INI file on remote machine:
 WIN=WINDOWS
+# All disks, memory, volumes that are mounted:
+# This is populated as nodes are discovered
+# (do not populate yourself)
+RESOURCES=()
 
 #######################################################
 ##  Author: Jamie Levy (Gleeda) <jamie.levy@gmail.com>
@@ -37,7 +41,8 @@ WIN=WINDOWS
 ##
 #######################################################
 
-if [[ $EUID -ne 0 ]];
+
+if [[ $EUID -ne 0 ]]; 
 then
    echo "This script must be run as root" 1>&2
    exit -1
@@ -58,101 +63,153 @@ then
    exit -1
 fi
 
+function installagent {
+    IP=$1
+    echo "[*] Installing the F-Response driver and starting its service on $IP"
+    mkdir -p /mnt/forensics
+    mount -t cifs -o user="$REMOTEUSER%$REMOTEPASS",iocharset=utf8,file_mode=0777,dir_mode=0777 //$IP/c\$ /mnt/forensics
 
-echo "[*] Installing the F-Response driver and starting its service"
-mkdir -p /mnt/forensics
-sudo mount -t cifs -o user="$REMOTEUSER%$REMOTEPASS",iocharset=utf8,file_mode=0777,dir_mode=0777 //$IP/c\$ /mnt/forensics
+    if [[ $? -ne 0 ]];
+    then
+        echo "[!!]"
+        echo "[!!] Unable to connect to $IP, please check credentials!"
+        echo "[!!]"
+        IPs=( "${IPs[@]/$IP}" )
+        return 1
+    fi
 
-sudo cp $EXE /mnt/forensics/$WIN
-sudo cp $INI /mnt/forensics/$WIN
+    cp $EXE /mnt/forensics/$WIN
+    cp $INI /mnt/forensics/$WIN
 
-net rpc service create $SERV $SERV "%windir%\\$EXE" -I $IP -U "$REMOTEUSER%$REMOTEPASS"
-net rpc service start $SERV -I $IP -U "$REMOTEUSER%$REMOTEPASS"
+    net rpc service create $SERV $SERV "%windir%\\$EXE" -I $IP -U "$REMOTEUSER%$REMOTEPASS"
+    net rpc service start $SERV -I $IP -U "$REMOTEUSER%$REMOTEPASS"
 
-umount /mnt/forensics
+    umount /mnt/forensics
 
-sleep 3
+    sleep 3
+    return 0
+}
 
-echo
-echo
-echo "[*] Finding ISCSI targets"
 
-iscsiadm --mode discoverydb --type sendtargets --portal  $IP --op new 
-iscsiadm --mode discoverydb  --type sendtargets --portal $IP --op update --name discovery.sendtargets.auth.username --value $FRUSER
-iscsiadm --mode discoverydb --type sendtargets --portal $IP --op update --name discovery.sendtargets.auth.password  --value $FRPASS
-MEM=`iscsiadm --mode discoverydb --type sendtargets --portal $IP  --discover|grep pmem$ |awk '{print $2}'|cut -d\: -f1`
-iscsiadm --mode discoverydb --type sendtargets --portal $IP  --discover
-iscsiadm --mode node --portal  $IP --op update --name node.session.auth.username --value $FRUSER
-iscsiadm --mode node --portal  $IP --op update --name node.session.auth.password --value $FRPASS
+function loginiscsi {
+    IP=$1
+    echo
+    echo
+    echo "[*] Finding ISCSI targets for $IP"
 
-echo
-echo
-echo "[*] Logging into $MEM\:pmem , $MEM\:disk-0 and $MEM\:vol-c"
+    iscsiadm --mode discoverydb --type sendtargets --portal  $IP --op new 
+    iscsiadm --mode discoverydb  --type sendtargets --portal $IP --op update --name discovery.sendtargets.auth.username --value $FRUSER
+    iscsiadm --mode discoverydb --type sendtargets --portal $IP --op update --name discovery.sendtargets.auth.password  --value $FRPASS
+    MEM=`iscsiadm --mode discoverydb --type sendtargets --portal $IP  --discover|grep pmem$ |awk '{print $2}'|cut -d\: -f1`
+    iscsiadm --mode discoverydb --type sendtargets --portal $IP  --discover
+    iscsiadm --mode node --portal  $IP --op update --name node.session.auth.username --value $FRUSER
+    iscsiadm --mode node --portal  $IP --op update --name node.session.auth.password --value $FRPASS
 
-iscsiadm --mode node --targetname $MEM\:pmem --portal $IP --login
-iscsiadm --mode node --targetname $MEM\:disk-0 --portal $IP --login
-iscsiadm --mode node --targetname $MEM\:vol-c --portal $IP --login
+    echo
+    echo
+    echo "[*] Logging into $MEM\:pmem , $MEM\:disk-0 and $MEM\:vol-c"
 
-MOUNTDISK=/dev/disk/by-path/ip-$IP:$PORT-iscsi-$MEM\:disk-0-lun-0
-MOUNTMEM=/dev/disk/by-path/ip-$IP:$PORT-iscsi-$MEM\:pmem-lun-0
-MOUNTVOL=/dev/disk/by-path/ip-$IP:$PORT-iscsi-$MEM\:vol-c-lun-0
+    iscsiadm --mode node --targetname $MEM\:pmem --portal $IP --login
+    iscsiadm --mode node --targetname $MEM\:disk-0 --portal $IP --login
+    iscsiadm --mode node --targetname $MEM\:vol-c --portal $IP --login
 
-sleep 3
+    MOUNTDISK=/dev/disk/by-path/ip-$IP:$PORT-iscsi-$MEM\:disk-0-lun-0
+    MOUNTMEM=/dev/disk/by-path/ip-$IP:$PORT-iscsi-$MEM\:pmem-lun-0
+    MOUNTVOL=/dev/disk/by-path/ip-$IP:$PORT-iscsi-$MEM\:vol-c-lun-0
 
-echo
-echo "The following devices are available:"
-echo
-echo MEM:
-readlink -f $MOUNTMEM
-echo
-echo "[*] To use Volatility:"
-echo "  $ sudo python vol.py -f `readlink -f $MOUNTMEM` --profile=PROFILE PLUGIN"
+    RESOURCES+=($MEM\:pmem+$IP)
+    RESOURCES+=($MEM\:disk-0+$IP)
+    RESOURCES+=($MEM\:vol-c+$IP)
 
-echo
-echo RAW DISK: 
-readlink -f $MOUNTDISK
-echo
-echo "[*] To use sleuthkit: "
-echo "  $ sudo mmls `readlink -f $MOUNTDISK`"
-echo "[*] For more, see http://wiki.sleuthkit.org/index.php?title=FS_Analysis"
+    sleep 3
 
-echo
-echo VOLUME:
-readlink -f $MOUNTVOL
-echo
-echo "[*] To mount the volume:"
-echo "  $ sudo mount -t ntfs -o ro,show_sys_files,hide_hid_files `readlink -f $MOUNTVOL` /mnt/disk/"
-echo
-echo
-echo
+    echo
+    echo "The following devices are available:"
+    echo
+    echo MEM:
+    readlink -f $MOUNTMEM
+    echo
+    echo "[*] To use Volatility:"
+    echo "  $ sudo python vol.py -f `readlink -f $MOUNTMEM` --profile=PROFILE PLUGIN"
 
-echo "[*] Use another shell for analysis"
-echo "    Note: you must be root in order to access the devices"
-echo "[*] Press [ENTER] to disconnect....."
+    echo
+    echo RAW DISK:
+    readlink -f $MOUNTDISK
+    echo
+    echo "[*] To use sleuthkit: "
+    echo "  $ sudo mmls `readlink -f $MOUNTDISK`"
+    echo "[*] For more, see http://wiki.sleuthkit.org/index.php?title=FS_Analysis"
 
-read any
+    echo
+    echo VOLUME:
+    readlink -f $MOUNTVOL
+    echo
+    echo "[*] To mount the volume:"
+    echo "  $ sudo mount -t ntfs -o ro,show_sys_files,hide_hid_files `readlink -f $MOUNTVOL` /mnt/disk/"
+    echo
+    echo
+    echo
+}
 
-echo "[*] Logging out and removing files...."
+function waitfordisconnect {
+    echo "[*] Use another shell for analysis"
+    echo "    Note: you must be root in order to access the devices"
+    echo "[*] Press [ENTER] to disconnect....."
+    read any
+}
 
-for i in $MEM:pmem $MEM:disk-0 $MEM:vol-c
+function logoutiscsi {
+    IP=$1
+    echo "[*] Logging out and removing files for $IP...."
+
+    for i in ${RESOURCES[@]}
+    do
+        item=$( echo $i |cut -d+ -f1 )
+        IP1=$( echo $i |cut -d+ -f2 )
+        if [ "$IP" == "$IP1" ]; then
+            echo "[*] iscsiadm --mode node --targetname $item --portal $IP1 --logout"
+            iscsiadm --mode node --targetname $item --portal $IP1 --logout 
+            RESOURCES=( "${RESOURCES[@]/$i}" )
+        fi
+    done
+    echo
+    echo "[*] iscsiadm --mode discoverydb --type sendtargets --portal $IP --op delete"
+    echo
+    iscsiadm --mode discoverydb --type sendtargets --portal $IP --op delete
+}
+
+function removeagent {
+    IP=$1
+    echo "[*] Stopping F-Response service and deleting its files on $IP"
+
+    net rpc service stop $SERV -I $IP -U "$REMOTEUSER%$REMOTEPASS"
+    net rpc service delete $SERV -I $IP -U "$REMOTEUSER%$REMOTEPASS"
+    mkdir -p /mnt/forensics
+    mount -t cifs -o user="$REMOTEUSER%$REMOTEPASS",iocharset=utf8,file_mode=0777,dir_mode=0777 //$IP/c\$ /mnt/forensics
+
+    sleep 2
+
+    rm /mnt/forensics/$WIN/$EXE
+    rm /mnt/forensics/$WIN/$INI
+
+    umount /mnt/forensics
+}
+
+
+for IP in ${IPs[@]}
 do
-    echo "[*] iscsiadm --mode node --targetname $i --portal $IP --logout"
-    iscsiadm --mode node --targetname $i --portal $IP --logout 
+    installagent $IP
 done
-iscsiadm --mode discoverydb --type sendtargets --portal $IP --op delete
 
-echo "[*] Stopping F-Response service and deleting its files"
+for IP in ${IPs[@]}
+do
+    loginiscsi $IP
+done
 
-net rpc service stop $SERV -I $IP -U "$REMOTEUSER%$REMOTEPASS"
+waitfordisconnect
 
-net rpc service delete $SERV -I $IP -U "$REMOTEUSER%$REMOTEPASS"
-
-mkdir -p /mnt/forensics
-sudo mount -t cifs -o user="$REMOTEUSER%$REMOTEPASS",iocharset=utf8,file_mode=0777,dir_mode=0777 //$IP/c\$ /mnt/forensics
-
-sleep 2
-
-sudo rm /mnt/forensics/$WIN/$EXE
-sudo rm /mnt/forensics/$WIN/$INI
-
-sudo umount /mnt/forensics
+for IP in ${IPs[@]}
+do
+    logoutiscsi $IP
+    removeagent $IP
+done
