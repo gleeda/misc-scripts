@@ -29,6 +29,7 @@ products = {
     0x601:"Windows 7",
     0x602:"Windows 8",
     0x603:"Windows 8.1"
+    0xa00:"Windows 10"
 }
 
 # http://winforensicaanalysis.googlecode.com/files/jobparse.pl
@@ -205,7 +206,7 @@ class Job:
 
     def _get_job_info(self):
         lines = []
-        lines.append("Product Info: {0}".format(products.get(self.ProductInfo, "None")))
+        lines.append("Product Info: {0}".format(products.get(self.ProductInfo, "Unknown Version")))
         lines.append("File Version: {0}".format(self.FileVersion))
         lines.append("UUID: {0}".format(self.UUID))
         priority = ""
