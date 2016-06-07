@@ -28,8 +28,8 @@ products = {
     0x600:"Windows Vista",
     0x601:"Windows 7",
     0x602:"Windows 8",
-    0x603:"Windows 8.1"
-    0xa00:"Windows 10"
+    0x603:"Windows 8.1",
+    0xa00:"Windows 10",
 }
 
 # http://winforensicaanalysis.googlecode.com/files/jobparse.pl
