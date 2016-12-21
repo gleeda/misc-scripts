@@ -1,6 +1,7 @@
 #!/usr/bin/env python
 import socket
 import getopt, sys, os
+import dns.resolver
 
 try:
     from pygeoip import *
@@ -57,8 +58,23 @@ codes = {
 }
 
 servers = [
-    "sbl-xbl.spamhaus.org",
+    "zen.spamhaus.org", 
+    "spam.abuse.ch", 
+    "virbl.dnsbl.bit.nl", 
+    "dnsbl.inps.de", 
+    "ix.dnsbl.manitu.net", 
+    "dnsbl.sorbs.net", 
+    "bl.spamcannibal.org", 
+    "bl.spamcop.net", 
+    "dnsbl-1.uceprotect.net", 
+    "dnsbl-2.uceprotect.net", 
+    "dnsbl-3.uceprotect.net", 
+    "db.wpbl.info",
+    "zen.spamhaus.org",
+    "dbl.spamhaus.org",
+    "pbl.spamhaus.org",
     "xbl.spamhaus.org",
+    "sbl.spamhaus.org",
     "cbl.abuseat.org",
 ]
 
@@ -136,11 +152,14 @@ if has_openpyxl:
 def checkbl(ip):
     for server in servers:
         try:
-            res = socket.gethostbyname(ip + '.' + server)
-            return ["Yes", codes[res], server]
+            my_resolver = dns.resolver.Resolver()
+            query = ip + '.' + server
+            res = socket.gethostbyname(query)
+            answer_txt = "{0}".format(my_resolver.query(query, "TXT")[0] or "")
+            return ["Yes", codes[res], server, answer_txt]
         except socket.gaierror:
             pass
-    return ["", "", ""]
+    return ["", "", "", ""]
 
 def usage():
     print sys.argv[0], "\n"
@@ -156,7 +175,7 @@ def main():
     wb = None
     ws = None
     color = False
-    header = ["IP Address", "Country Code", "Country Name", "Blacklisted", "Code", "Server", "Robtex Info"]
+    header = ["IP Address", "Country Code", "Country Name", "Blacklisted", "Code", "Server", "Details", "Robtex Info"]
     try:
         opts, args = getopt.getopt(sys.argv[1:], "hf:g:e:c", ["help", "file=", "geolitecity=", "excelfile=", "coloring"])
     except getopt.GetoptError, err:
@@ -207,7 +226,7 @@ def main():
         ip = "/".join(item.split("."))
         robtex_url = "{0}/{1}".format(robtex, ip)
         bl = checkbl(rev)
-        line = [item, gistuff["country_code"], gistuff["country_name"], bl[0], bl[1], bl[2], robtex_url]
+        line = [item, gistuff["country_code"], gistuff["country_name"], bl[0], bl[1], bl[2], bl[3], robtex_url]
         if excelfile == None:
             print ",".join(x for x in line)
         else:
